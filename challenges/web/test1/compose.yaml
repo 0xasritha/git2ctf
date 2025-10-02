@@ -1,0 +1,6 @@
+services:
+  chall:
+    build: .
+    ports:
+      - "8000:${CHALL_EXTERNAL_PORT}"
+    restart: unless-stopped
