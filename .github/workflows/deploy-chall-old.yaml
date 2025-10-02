@@ -2,10 +2,10 @@ name: Deploy Challenges
 
 on:
   push:
-    branches: [ "dev" ]
+    branches: ["dev"]
   pull_request:
-    branches: [ "dev" ]
-  workflow_dispatch: # ? 
+    branches: ["dev"]
+  workflow_dispatch: # ?
 
 jobs:
   discover-challenges:
@@ -46,37 +46,36 @@ jobs:
           echo "matrix=$matrix_json" >> $GITHUB_OUTPUT
           echo "::endgroup::"
 
-  assign-external-ports: 
-    name: Assign External Ports 
-    needs: discover-challenges 
-    runs-on: ubuntu-latest 
-    outputs: 
+  assign-external-ports:
+    name: Assign External Ports
+    needs: discover-challenges
+    runs-on: ubuntu-latest
+    outputs:
       env: ${{ steps.vars.outputs.port }}
     strategy:
       matrix:
         include: ${{ fromJson(needs.discover-challenges.outputs.matrix) }}
-    # #TODO: only run if any of the head_commit arrays contains "challenges/", make this into challenge specific, also test, also confirm this would execute on every commit to main 
+    # #TODO: only run if any of the head_commit arrays contains "challenges/", make this into challenge specific, also test, also confirm this would execute on every commit to main
     if: |
       contains(join(github.event.head_commit.added, ''), 'challenges/') ||
       contains(join(github.event.head_commit.modified, ''), 'challenges/') ||
       contains(join(github.event.head_commit.removed, ''), 'challenges/')
     steps:
-      - name: Find those envs 
+      - name: Find those envs
         uses: actions/checkout@v4
-      - name: get next available ports variable 
-      - name: update next available ports variable 
+      - name: get next available ports variable
+      - name: update next available ports variable
       - name: generate content for .env
         run: echo "port=asdf" >> $
 
-
-  deploy-challenge-on-GCP: # on cloud 
-    name: Deploy Challenge on GCP 
+  deploy-challenge-on-GCP: # on cloud
+    name: Deploy Challenge on GCP
     needs: discover-challenges
     runs-on: ubuntu-latest
     strategy:
       matrix:
         include: ${{ fromJson(needs.discover-challenges.outputs.matrix) }}
-    # #TODO: only run if any of the head_commit arrays contains "challenges/", make this into challenge specific, also test, also confirm this would execute on every commit to main 
+    # #TODO: only run if any of the head_commit arrays contains "challenges/", make this into challenge specific, also test, also confirm this would execute on every commit to main
     if: |
       contains(join(github.event.head_commit.added, ''), 'challenges/') ||
       contains(join(github.event.head_commit.modified, ''), 'challenges/') ||
@@ -95,8 +94,3 @@ jobs:
       # Replace the echo below with your actual deployment command, for example:
       # - name: Call CTFd API
       #   run: deploy-your-challenge --path "$GITHUB_WORKSPACE/${{ matrix.path }}"
-    
-
-
-
-on:
