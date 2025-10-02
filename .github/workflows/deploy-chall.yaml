@@ -8,20 +8,20 @@ on:
 # steps can run a script you define or run an action (reusable action)
 # each step runs in its own process (so env variables not preserved between steps)
 # workflows defined in `.github/workflows`
+
 jobs:
   define_challenges_matrix:
     runs-on: ubuntu-latest
     outputs:
       challenges: ${{ steps.get_challenges.outputs.challenges }}
     steps:
-      - uses: actions/checkout@v4 # pulls your repo into the runner
+      - uses: actions/checkout@v4
+
       - name: Get Challenges
         id: get_challenges
         run: |
           # Find all challenge dirs two levels deep: /challenges/<category>/<challenge>
-          challenges=$(find challenges -mindepth 2 -maxdepth 2 -type d | sed 's|challenges/||')
+          json=$(find challenges -mindepth 2 -maxdepth 2 -type d -printf '%P\n' \
+            | jq -R . | jq -c -s .)
 
-          # Convert to JSON array
-          json=$(printf '%s\n' $challenges | jq -R . | jq -s .)
-
-          echo "challenges=$json" >> $GITHUB_OUTPUT
+          echo "challenges=$json" >> "$GITHUB_OUTPUT"
