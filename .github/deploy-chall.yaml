@@ -4,63 +4,17 @@ on:
   push:
     branches: ["dev"]
 
+# manual trigger or event triggers a workflow: runs 1(+) jobs, which executes on a runner machine and runs series of 1(+) steps
+# steps can run a script you define or run an action (reusable action)
+# each step runs in its own process (so env variables not preserved between steps)
+# workflows defined in `.github/workflows`
 jobs:
-  get-challenges:
-    name: Get All Challenges
+  test_matrix:
     runs-on: ubuntu-latest
-    outputs:
-      matrix: ${{ steps.set-matrix.outputs.matrix }}
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
-
-      - name: Build challenge matrix
-        id: set-matrix
-        run: |
-          echo "::group::Getting all challenges"
-          matrix_json="["
-          first=true
-          workspace="${GITHUB_WORKSPACE}/challenges"
-          shopt -s globstar
-
-          for f in "$workspace"/**/info.yaml; do
-            [ -e "$f" ] || continue
-            dir=$(dirname "$f")
-            rel="${dir#$GITHUB_WORKSPACE/}"          # e.g. "challenges/web/xss"
-            name=$(basename "$dir")                  # e.g. "xss"
-            category=$(basename "$(dirname "$dir")") # e.g. "web"
-
-            if [ "$first" = true ]; then
-              first=false
-            else
-              matrix_json+=","
-            fi
-
-            matrix_json+="{\"path\":\"$rel\",\"category\":\"$category\",\"name\":\"$name\"}"
-          done
-
-          matrix_json+="]"
-          echo "matrix=$matrix_json" >> $GITHUB_OUTPUT
-          echo "::endgroup::"
-
-  assign-external-ports:
-    name: Assign External Ports
-    needs: discover-challenges
-    runs-on: ubuntu-latest
-    outputs:
-      env: ${{ steps.vars.outputs.port }}
     strategy:
       matrix:
-        include: ${{ fromJson(needs.discover-challenges.outputs.matrix) }}
-    # #TODO: only run if any of the head_commit arrays contains "challenges/", make this into challenge specific, also test, also confirm this would execute on every commit to main
-    if: |
-      contains(join(github.event.head_commit.added, ''), 'challenges/') ||
-      contains(join(github.event.head_commit.modified, ''), 'challenges/') ||
-      contains(join(github.event.head_commit.removed, ''), 'challenges/')
+        challenge: ["chall1", "chall2", "chall3"]
     steps:
-      - name: Find those envs
-        uses: actions/checkout@v4
-      - name: get next available ports variable
-      - name: update next available ports variable
-      - name: generate content for .env
-        run: echo "port=asdf" >> $
+      - name: Test Matrix
+        run: |
+          echo ${{ matrix.challenge }}
