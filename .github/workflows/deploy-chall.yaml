@@ -9,12 +9,18 @@ on:
 # each step runs in its own process (so env variables not preserved between steps)
 # workflows defined in `.github/workflows`
 jobs:
-  test_matrix:
+  define_challenges_matrix:
     runs-on: ubuntu-latest
-    strategy:
-      matrix:
-        challenge: ["chall1", "chall2", "chall3"]
+    outputs:
+      challenges: ${{ steps.get_challenges.outputs.challenges }}
     steps:
-      - name: Test Matrix
+      - name: Get Challenges
+        id: get_challenges
         run: |
-          echo ${{ matrix.challenge }}
+          # Find all challenge dirs two levels deep: /challenges/<category>/<challenge>
+          challenges=$(find challenges -mindepth 2 -maxdepth 2 -type d | sed 's|challenges/||' | tr '/' '-')
+
+          # Convert to JSON array
+          json=$(printf '%s\n' $challenges | jq -R . | jq -s .)
+
+          echo "challenges=$json" >> $GITHUB_OUTPUT
