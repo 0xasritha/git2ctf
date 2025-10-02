@@ -14,6 +14,7 @@ jobs:
     outputs:
       challenges: ${{ steps.get_challenges.outputs.challenges }}
     steps:
+      - uses: actions/checkout@v4 # pulls your repo into the runner
       - name: Get Challenges
         id: get_challenges
         run: |
