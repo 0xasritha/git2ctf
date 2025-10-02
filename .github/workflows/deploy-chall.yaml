@@ -18,7 +18,7 @@ jobs:
         id: get_challenges
         run: |
           # Find all challenge dirs two levels deep: /challenges/<category>/<challenge>
-          challenges=$(find challenges -mindepth 2 -maxdepth 2 -type d | sed 's|challenges/||' | tr '/' '-')
+          challenges=$(find challenges -mindepth 2 -maxdepth 2 -type d | sed 's|challenges/||')
 
           # Convert to JSON array
           json=$(printf '%s\n' $challenges | jq -R . | jq -s .)
