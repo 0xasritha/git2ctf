@@ -32,8 +32,7 @@ jobs:
     strategy:
       matrix:
         challenge: ${{ fromJSON(needs.define-challenges-matrix.challenges)}}
-
-      steps:
-        - name: Echo Challenge
-          run: |
-            echo "$challenge"
+    steps:
+      - name: Echo Challenge
+        run: |
+          echo "$challenge"
