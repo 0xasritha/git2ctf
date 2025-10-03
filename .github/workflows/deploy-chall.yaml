@@ -39,11 +39,18 @@ jobs:
         uses: google-github-actions/auth@v3
         with:
           credentials_json: ${{ secrets.GCP_CREDENTIALS }}
-      # - name: Push static assets (if present)
       - name: "Set up Cloud SDK"
         uses: "google-github-actions/setup-gcloud@v3"
         with:
           version: ">= 363.0.0"
+      - name: Upload Static Files (If Present)
+        if: steps.check_static.outputs.files_exists == 'true'
+        uses: google-github-actions/upload-cloud-storage@v2
+        with:
+          path: "challenges/${{ matrix.challenge }}/static"
+          headers: |-
+            content-disposition: 'attachment'
+          destination: "${{ vars.STATIC_ASSETS_BUCKET_NAME }}/${{ matrix.challenge }}"
       - name: "Use gcloud CLI"
         run: "gcloud compute instances list"
       # - name: Create CTFd Challenge Entry or Update CTFd Challenge Entry Connection Info
