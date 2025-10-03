@@ -43,6 +43,7 @@ jobs:
         uses: "google-github-actions/setup-gcloud@v3"
         with:
           version: ">= 363.0.0"
+          project_id: ${{ vars.GCP_PROJECT_ID }}
       - name: Upload Static Files (If Present)
         if: ${{ hashFiles(format('challenges/{0}/static/**', matrix.challenge)) != '' }}
         uses: google-github-actions/upload-cloud-storage@v2

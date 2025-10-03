@@ -26,3 +26,4 @@
 # VM_USER: user on the 
 # VM_ZONE
 # VM_NAME
+# GCP_PROJECT_ID 
