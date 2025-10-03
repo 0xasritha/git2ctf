@@ -33,6 +33,7 @@ jobs:
     strategy:
       matrix:
         challenge: ${{ fromJson(needs.GET-ALL-CHALLENGES.outputs.challenges) }}
+      max-parallel: 1
     steps:
       - uses: actions/checkout@v4
       - name: Authenticate With GCP (for deploy)
