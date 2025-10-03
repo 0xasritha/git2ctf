@@ -55,7 +55,7 @@ jobs:
         with:
           version: ">= 363.0.0"
       - name: "Use gcloud CLI"
-        run: "gcloud info"
+        run: "gcloud projects list"
   create-chall-ctfd-entry:
     runs-on: ubuntu-latest
     needs: define-challenges-matrix
