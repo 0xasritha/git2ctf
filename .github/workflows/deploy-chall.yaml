@@ -4,10 +4,10 @@ on:
   push:
     branches: ["dev"]
 
-# ✅ Concurrency (workflow-level) to prevent two runs colliding with each other
-concurrency:
-  group: deploy-${{ vars.GCP_PROJECT_ID }}-${{ vars.VM_NAME }}
-  cancel-in-progress: false
+# manual trigger or event triggers a workflow: runs 1(+) jobs, which executes on a runner machine and runs series of 1(+) steps
+# steps can run a script you define or run an action (reusable action)
+# each step runs in its own process (so env variables not preserved between steps)
+# workflows defined in .github/workflows
 
 jobs:
   GET-ALL-CHALLENGES:
@@ -24,9 +24,8 @@ jobs:
           json=$(find challenges -mindepth 2 -maxdepth 2 -type d -printf '%P\n' \
             | jq -R . | jq -c -s .)
           echo "challenges=$json" >> "$GITHUB_OUTPUT"
-
   # TODO: add a job here that stops execution if no files where changed
-  # TODO: these respectively should only trigger for challenges with `/static/` or have docker-compose
+  # TODO: these respectively should only trigger for challenges with /static/ or have docker-compose
   per-challenge:
     name: ${{ matrix.challenge }}
     needs: GET-ALL-CHALLENGES
@@ -54,26 +53,29 @@ jobs:
           headers: |-
             content-disposition: 'attachment'
           destination: "${{ vars.STATIC_ASSETS_BUCKET_NAME }}/${{ matrix.challenge }}"
-      - name: "Use gcloud CLI"
-        run: "gcloud compute instances list"
+      - name: Setup SSH key
+        run: |
+          mkdir -p ~/.ssh
+          echo "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/git2ctf
+          chmod 600 ~/.ssh/git2ctf
+          echo "Host *\n  StrictHostKeyChecking no\n  IdentityFile ~/.ssh/git2ctf" >> ~/.ssh/config
+      - name: Copy challenge dir
+        run: |
+          scp -r challenges/${{ matrix.challenge }} \
+            ${{ vars.VM_USER }}@${{ vars.VM_NAME }}:/home/${{ vars.VM_USER }}/challenges/
+      - name: Deploy
+        run: |
+          ssh ${{ vars.VM_USER }}@${{ vars.VM_NAME }} \
+            "cd /home/${{ vars.VM_USER }}/challenges/${{ matrix.challenge }} && sudo docker compose up --build -d"
 
-      # ✅ Step-level mutex so only ONE parallel job touches the VM via SSH/SCP at a time
-      - name: Queue for VM SSH access
-        uses: softprops/turnstyle@v1
-        with:
-          poll-interval-seconds: 10
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          # lock scope is the VM; parallel jobs to other VMs aren't blocked
-          TURNSTYLE_GROUP: vm-ssh-${{ vars.GCP_PROJECT_ID }}-${{ vars.VM_NAME }}
-
-      - name: Create CTFd Challenge Entry or Update CTFd Challenge Entry Connection Info
-        if: ${{ hashFiles(format('challenges/{0}/docker-compose*.yml', matrix.challenge)) != '' || hashFiles(format('challenges/{0}/docker-compose*.yaml', matrix.challenge)) != '' || hashFiles(format('challenges/{0}/compose*.yml', matrix.challenge)) != '' || hashFiles(format('challenges/{0}/compose*.yaml', matrix.challenge)) != '' }}
-        # TODO: test how the logs show up here, ie. if there is a port collision and it cannot deploy on the remote VM
+#      - name: Create CTFd Challenge Entry or Update CTFd Challenge Entry Connection Info
+ #       if: ${{ hashFiles(format('challenges/{0}/docker-compose*.yml', matrix.challenge)) != '' || hashFiles(format('challenges/{0}/docker-compose*.yaml', matrix.challenge)) != '' || hashFiles(format('challenges/{0}/compose*.yml', matrix.challenge)) != '' || hashFiles(format('challenges/{0}/compose*.yaml', matrix.challenge)) != '' }}
+  #      # TODO: test how the logs show up here, ie. if there is a port collision and it cannot deploy on the remote VM
         run: |
           # Clean up old docker compose
-          gcloud compute ssh ${{ vars.VM_USER }}@${{ vars.VM_NAME }} --zone=${{ vars.VM_ZONE }} --command="DIR=/home/${{ vars.VM_USER }}/challenges/${{ matrix.challenge }} --troubleshoot; if [ -d \$DIR ]; then cd \$DIR && sudo docker compose down; cd .. && rm -rf \$DIR; fi || true"
+   #       gcloud compute ssh ${{ vars.VM_USER }}@${{ vars.VM_NAME }} --zone=${{ vars.VM_ZONE }} --command="DIR=/home/${{ vars.VM_USER }}/challenges/${{ matrix.challenge }}; if [ -d \$DIR ]; then cd \$DIR && sudo docker compose down; cd .. && rm -rf \$DIR; fi || true"
 
-          gcloud compute scp --zone=${{ vars.VM_ZONE }} --recurse challenges/${{ env.branch }} ${{ vars.VM_USER }}@${{ vars.VM_NAME }}:/home/${{ vars.VM_USER }}/challenges/${{ matrix.challenge }}
+    #      gcloud compute scp --zone=${{ vars.VM_ZONE }} --recurse challenges/${{ env.branch }} ${{ vars.VM_USER }}@${{ vars.VM_NAME }}:/home/${{ vars.VM_USER }}/challenges/${{ matrix.challenge }}
 
-          gcloud compute ssh ${{ vars.VM_USER }}@${{ vars.VM_NAME }} --zone=${{ vars.VM_ZONE }} --command="cd /home/${{ vars.USER }}/challenges/${{ matrix.challenge }} --troubleshoot && sudo docker compose up --build -d"
+     #     gcloud compute ssh ${{ vars.VM_USER }}@${{ vars.VM_NAME }} --zone=${{ vars.VM_ZONE }} --command="cd /home/${{ vars.USER }}/challenges/${{ matrix.challenge }} && sudo docker compose up --build -d" give me the modified workflow, where you ONLY change the turn key concurrency stuff 
+  
