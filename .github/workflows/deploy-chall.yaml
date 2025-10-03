@@ -32,7 +32,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        challenge: ${{ fromJson(needs.define-challenges-matrix.outputs.challenges) }}
+        challenge: ${{ fromJson(needs.GET-ALL-CHALLENGES.outputs.challenges) }}
     steps:
       - uses: actions/checkout@v4
       - name: Authenticate With GCP (for deploy)
