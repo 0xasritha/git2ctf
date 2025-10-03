@@ -72,8 +72,8 @@ jobs:
         # TODO: test how the logs show up here, ie. if there is a port collision and it cannot deploy on the remote VM
         run: |
           # Clean up old docker compose
-          gcloud compute ssh ${{ vars.VM_USER }}@${{ vars.VM_NAME }} --zone=${{ vars.VM_ZONE }} --command="DIR=/home/${{ vars.VM_USER }}/challenges/${{ matrix.challenge }}; if [ -d \$DIR ]; then cd \$DIR && sudo docker compose down; cd .. && rm -rf \$DIR; fi || true"
+          gcloud compute ssh ${{ vars.VM_USER }}@${{ vars.VM_NAME }} --zone=${{ vars.VM_ZONE }} --command="DIR=/home/${{ vars.VM_USER }}/challenges/${{ matrix.challenge }} --troubleshoot; if [ -d \$DIR ]; then cd \$DIR && sudo docker compose down; cd .. && rm -rf \$DIR; fi || true"
 
           gcloud compute scp --zone=${{ vars.VM_ZONE }} --recurse challenges/${{ env.branch }} ${{ vars.VM_USER }}@${{ vars.VM_NAME }}:/home/${{ vars.VM_USER }}/challenges/${{ matrix.challenge }}
 
-          gcloud compute ssh ${{ vars.VM_USER }}@${{ vars.VM_NAME }} --zone=${{ vars.VM_ZONE }} --command="cd /home/${{ vars.USER }}/challenges/${{ matrix.challenge }} && sudo docker compose up --build -d"
+          gcloud compute ssh ${{ vars.VM_USER }}@${{ vars.VM_NAME }} --zone=${{ vars.VM_ZONE }} --command="cd /home/${{ vars.USER }}/challenges/${{ matrix.challenge }} --troubleshoot && sudo docker compose up --build -d"
