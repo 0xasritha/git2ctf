@@ -11,6 +11,11 @@
 
 # Brainstorm
 
+Local Testing:
+
+- `admin`
+- `password`
+
 **Stage 1(MVP)**:
 
 - bash script with GCP commands for spinning up infra (at first) -> or make this into a pipeline idk
@@ -73,7 +78,3 @@ look at ALL external ports it’s mapped too. If it is mapped to an external por
 
 - squash commit history + change from master to main as default
 - should automatically scale VM if VM space is used up
-
-alsdjflkajsdf;lkajdsf;lj
-
-alskjdflasjdf
