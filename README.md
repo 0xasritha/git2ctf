@@ -40,6 +40,8 @@ look at ALL external ports it’s mapped too. If it is mapped to an external por
 
 - instantiator - manually deployment for challs needing instantiaor
 - how to specify if you need ynetd?
+- instead of opening all ports in the firewall rule, edit the firewall rule as each challenge deploys to accept traffic on that port as well in the pipeline
+- dns record updates
 
 **Stage 2**:
 
@@ -56,6 +58,7 @@ look at ALL external ports it’s mapped too. If it is mapped to an external por
 - connect to remote docker deamon securely, that's how challenges are deployed
 - automated resource management - for GCP atleast -> collect stats on if VMs available to deploy to, spin up another one or scale horizonctally if needed (automated as pipeline step)
 - also deploy challenges to a dashboard that shows status on if they are up or not + discord bot? (automated as pipeline step)
+- rn just using a service account for deploying shit in a gh action + create a gh workflow for this instead of a bash script?
 
 ---
 
