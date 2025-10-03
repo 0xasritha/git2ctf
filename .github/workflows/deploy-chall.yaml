@@ -44,13 +44,13 @@ jobs:
         with:
           version: ">= 363.0.0"
       - name: Upload Static Files (If Present)
-        if: steps.check_static.outputs.files_exists == 'true'
+        if: ${{ hashFiles(format('challenges/{0}/static/**', matrix.challenge)) != '' }}
         uses: google-github-actions/upload-cloud-storage@v2
         with:
-          path: "challenges/${{ challenge }}/static"
+          path: "challenges/${{ matrix.challenge }}/static"
           headers: |-
             content-disposition: 'attachment'
-          destination: "${{ vars.STATIC_ASSETS_BUCKET_NAME }}/${{ challenge }}"
+          destination: "${{ vars.STATIC_ASSETS_BUCKET_NAME }}/${{ matrix.challenge }}"
       - name: "Use gcloud CLI"
         run: "gcloud compute instances list"
       # - name: Create CTFd Challenge Entry or Update CTFd Challenge Entry Connection Info
