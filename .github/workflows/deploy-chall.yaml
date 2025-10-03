@@ -10,7 +10,7 @@ on:
 # workflows defined in `.github/workflows`
 
 jobs:
-  define-challenges-matrix:
+  GET-ALL-CHALLENGES:
     runs-on: ubuntu-latest
     outputs:
       challenges: ${{ steps.get-challenges.outputs.challenges }}
@@ -28,7 +28,7 @@ jobs:
   # TODO: these respectively should only trigger for challenges with `/static/` or have docker-compose
   per-challenge:
     name: ${{ matrix.challenge }}
-    needs: define-challenges-matrix
+    needs: GET-ALL-CHALLENGES
     runs-on: ubuntu-latest
     strategy:
       matrix:
