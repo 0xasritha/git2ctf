@@ -18,6 +18,11 @@
 # IAM & ADMIN > Service accounts > + Create service account; give it "Owner" permissions (TODO: fix)
 # after creating it, click on it, go to the "Keys" page, and then generate a JSON 
 
+# Enable Cloud Resource Manager API 
+# Enable IAM API 
+
+
+# ---
 # OUTPUTS TO BE CREATED AS A REPOSITORY SECRET: 
 # GCP_CREDENTIALS: contents of the service account JSON file 
 
