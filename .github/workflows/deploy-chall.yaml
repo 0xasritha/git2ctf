@@ -54,4 +54,13 @@ jobs:
           destination: "${{ vars.STATIC_ASSETS_BUCKET_NAME }}/${{ matrix.challenge }}"
       - name: "Use gcloud CLI"
         run: "gcloud compute instances list"
-      # - name: Create CTFd Challenge Entry or Update CTFd Challenge Entry Connection Info
+      - name: Create CTFd Challenge Entry or Update CTFd Challenge Entry Connection Info
+        if: ${{ hashFiles(format('challenges/{0}/docker-compose*.yml', matrix.challenge)) != '' || hashFiles(format('challenges/{0}/docker-compose*.yaml', matrix.challenge)) != '' || hashFiles(format('challenges/{0}/compose*.yml', matrix.challenge)) != '' || hashFiles(format('challenges/{0}/compose*.yaml', matrix.challenge)) != '' }}
+        # TODO: test how the logs show up here, ie. if there is a port collision and it cannot deploy on the remote VM
+        run: |
+          # Clean up old docker compose
+          gcloud compute ssh ${{ vars.VM_USER }}@${{ vars.VM_NAME }} --zone=${{ vars.VM_ZONE }} --command="DIR=/home/${{ vars.VM_USER }}/challenges/${{ matrix.challenge }}; if [ -d \$DIR ]; then cd \$DIR && sudo docker compose down; cd .. && rm -rf \$DIR; fi || true"
+
+          gcloud compute scp --zone=${{ vars.VM_ZONE }} --recurse challenges/${{ env.branch }} ${{ vars.VM_USER }}@${{ vars.VM_NAME }}:/home/${{ vars.VM_USER }}/challenges/${{ matrix.challenge }}
+
+          gcloud compute ssh ${{ vars.VM_USER }}@${{ vars.VM_NAME }} --zone=${{ vars.VM_ZONE }} --command="cd /home/${{ vars.USER }}/challenges/${{ matrix.challenge }} && sudo docker compose up --build -d"

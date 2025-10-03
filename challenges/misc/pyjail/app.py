@@ -4,7 +4,7 @@ app = Flask(__name__)
 
 @app.get("/")
 def hello():
-    return "XSS WEB\n"
+    return "MISC PYJAIL"
 
 if __name__ == "__main__":
     # Bind to all interfaces inside the container

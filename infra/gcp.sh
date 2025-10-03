@@ -1,6 +1,6 @@
 # assume you are already authenticated with gcloud CLI 
 
-# create VM called `challs` (`us-east1`, `us-east1-b`, `e2-standard-2` (2 vCPU, 1 core, 8 GB memory), 25 GB, ~$52)
+# create VM called `challs` (`us-east1`, `us-east1-b`, `e2-standard-2` (2 vCPU, 1 core, 8 GB memory), 25 GB, ~$52) (#TODO: fix so we will create multiple VMs + fix in the pipeline too)
 
 # install docker + git on that VM 
 
@@ -22,3 +22,6 @@
 
 # OUTPUTS TO BE CREATED AS A REPOSITORY VARIABLE: 
 # STATIC_ASSETS_BUCKET_NAME: global unique bucket name 
+# VM_USER: user on the 
+# VM_ZONE
+# VM_NAME

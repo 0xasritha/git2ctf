@@ -38,6 +38,7 @@ look at ALL external ports it’s mapped too. If it is mapped to an external por
 
 **Stage 1.5**:
 
+- should deploy to multiple VMs instead of just one giant VM (both `/infra/gcp.sh` + the pipeline has to be updated)
 - instantiator - manually deployment for challs needing instantiaor
 - how to specify if you need ynetd?
 - instead of opening all ports in the firewall rule, edit the firewall rule as each challenge deploys to accept traffic on that port as well in the pipeline
