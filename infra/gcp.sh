@@ -10,7 +10,7 @@
 
 # edit the VM to have the `challs` tag 
 
-# create a static assets bucket (`minutemanctf25-challenge`) with public viewing permissions + should download  static assets (https://cloud.google.com/storage/docs/access-control/making-data-public#console)
+# create a static assets bucket (`minutemanctf25-challenges`) with public viewing permissions + should download  static assets (https://cloud.google.com/storage/docs/access-control/making-data-public#console)
 
 # create the service account (for github actions) (`git2ctf-minutemanctf25`)
 # IAM & ADMIN > Service accounts > + Create service account; give it "Owner" permissions (TODO: fix)
@@ -18,3 +18,7 @@
 
 # OUTPUTS TO BE CREATED AS A REPOSITORY SECRET: 
 # GCP_CREDENTIALS: contents of the service account JSON file 
+
+
+# OUTPUTS TO BE CREATED AS A REPOSITORY VARIABLE: 
+# STATIC_ASSETS_BUCKET_NAME: global unique bucket name 
