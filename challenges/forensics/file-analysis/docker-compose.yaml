@@ -1,0 +1,37 @@
+version: "3.9"
+
+services:
+  web:
+    image: nginx:latest
+    ports:
+      # short syntax: host:container
+      - "9000:80" # external 8080 → container 80
+      - "8443:443" # external 8443 → container 443
+    restart: unless-stopped
+
+  db:
+    image: postgres:15
+    environment:
+      POSTGRES_PASSWORD: example
+    ports:
+      # object syntax with explicit published field
+      - target: 5432
+        published: 15432
+        protocol: tcp
+        mode: host
+    restart: unless-stopped
+
+  redis:
+    image: redis:7
+    ports:
+      - "6379:6379" # external 6379 → container 6379
+    restart: unless-stopped
+
+  api:
+    image: my-api:latest
+    build: ./api
+    ports:
+      # mix of different host/container ports
+      - "5000:5000" # external 5000 → container 5000
+      - "6000:5001" # external 6000 → container 5001
+    restart: unless-stopped

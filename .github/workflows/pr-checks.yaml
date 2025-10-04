@@ -1,5 +1,6 @@
 # TAKEN-EXTERNAL-PORTS:
 # Check 1: External Port Allocation, check against global env variable? (would have to make sure that this would be updated on commits to main to to keep everything in sync, otherwise fail the challenge early)
+# CHECK THAT YOUR CHALLENGES YOU ARE DEPLOYING DON'T HAVE REPETING PORTS EITHER
 # Check 2: If they have a `/static/` folder, check that the `/static/` folder has a zipped file, and that it is zipped in a standadized way
 # Check 3: Check that the docker compose has the auto restart thing
 # Check 4: Check that a uuid.yaml is present with a uuid. Test that unless it is adding the uuid.yaml for the first time people are not modifying the value in uuid.yaml
