@@ -1,5 +1,5 @@
 # TAKEN-EXTERNAL-PORTS:
-# Check 1: External Port Allocation, check against global env variable? (would have to make sure that this would be updated on commits to main to to keep everything in sync, otherwise fail the challenge early)
+# Check 1: External Port Allocation, check against global env variable? (would have to make sure that this would be updated on commits to main to to keep everything in sync, otherwise fail the challenge early). also check any variation of docker-compose.yaml (ex. compose.yaml), not just docker-compose.yaml
 # CHECK THAT YOUR CHALLENGES YOU ARE DEPLOYING DON'T HAVE REPETING PORTS EITHER
 # Check 2: If they have a `/static/` folder, check that the `/static/` folder has a zipped file, and that it is zipped in a standadized way
 # Check 3: Check that the docker compose has the auto restart thing
