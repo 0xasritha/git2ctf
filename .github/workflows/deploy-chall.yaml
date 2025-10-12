@@ -6,7 +6,7 @@ on:
 
 # manual trigger or event triggers a workflow: runs 1(+) jobs, which executes on a runner machine and runs series of 1(+) steps
 # steps can run a script you define or run an action (reusable action)
-# each step runs in its own process (so env variables not preserved between steps)
+# each step runs in its own process (so env variables are NOT preserved between steps)
 # workflows defined in .github/workflows
 
 jobs:
@@ -25,7 +25,7 @@ jobs:
             | jq -R . | jq -c -s .)
           echo "challenges=$json" >> "$GITHUB_OUTPUT"
   # TODO: add a job here that stops execution if no files where changed
-  # TODO: these respectively should only trigger for challenges with /static/ or have docker-compose
+  # TODO: should I make some executions only trigger for challenges with /static/ or have docker-compose
   per-challenge:
     name: ${{ matrix.challenge }}
     needs: GET-ALL-CHALLENGES
@@ -35,47 +35,50 @@ jobs:
         challenge: ${{ fromJson(needs.GET-ALL-CHALLENGES.outputs.challenges) }}
     steps:
       - uses: actions/checkout@v4
-      - name: Authenticate With GCP (for deploy)
-        uses: google-github-actions/auth@v3
-        with:
-          credentials_json: ${{ secrets.GCP_CREDENTIALS }}
-      - name: "Set up Cloud SDK"
-        uses: "google-github-actions/setup-gcloud@v3"
-        with:
-          version: ">= 363.0.0"
-          project_id: ${{ vars.GCP_PROJECT_ID }}
-      - name: Upload Static Files (If Present)
-        if: ${{ hashFiles(format('challenges/{0}/static/**', matrix.challenge)) != '' }}
-        uses: google-github-actions/upload-cloud-storage@v2
-        with:
-          path: "challenges/${{ matrix.challenge }}/static"
-          parent: false
-          headers: |-
-            content-disposition: 'attachment'
-          destination: "${{ vars.STATIC_ASSETS_BUCKET_NAME }}/${{ matrix.challenge }}"
-      - name: Setup SSH key
-        run: |
-          mkdir -p ~/.ssh
-          echo "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/git2ctf
-          chmod 600 ~/.ssh/git2ctf
-          echo "Host *\n  StrictHostKeyChecking no\n  IdentityFile ~/.ssh/git2ctf" >> ~/.ssh/config
-      - name: Copy challenge dir
-        run: |
-          scp -r challenges/${{ matrix.challenge }} \
-            ${{ vars.VM_USER }}@${{ vars.VM_NAME }}:/home/${{ vars.VM_USER }}/challenges/
-      - name: Deploy
-        run: |
-          ssh ${{ vars.VM_USER }}@${{ vars.VM_NAME }} \
-            "cd /home/${{ vars.VM_USER }}/challenges/${{ matrix.challenge }} && sudo docker compose up --build -d"
+        # copy over repo
+        # run the create_challenge.py with repo cloned in, path passed in, and CTFD_TOKEN, CTFD_URL, + other stuff? injected as env variables
 
-#      - name: Create CTFd Challenge Entry or Update CTFd Challenge Entry Connection Info
- #       if: ${{ hashFiles(format('challenges/{0}/docker-compose*.yml', matrix.challenge)) != '' || hashFiles(format('challenges/{0}/docker-compose*.yaml', matrix.challenge)) != '' || hashFiles(format('challenges/{0}/compose*.yml', matrix.challenge)) != '' || hashFiles(format('challenges/{0}/compose*.yaml', matrix.challenge)) != '' }}
-  #      # TODO: test how the logs show up here, ie. if there is a port collision and it cannot deploy on the remote VM
+        # - uses: actions/checkout@v4
+        # - name: Authenticate With GCP (for deploy)
+        #   uses: google-github-actions/auth@v3
+        #   with:
+        #     credentials_json: ${{ secrets.GCP_CREDENTIALS }}
+        # - name: "Set up Cloud SDK"
+        #   uses: "google-github-actions/setup-gcloud@v3"
+        #   with:
+        #     version: ">= 363.0.0"
+        #     project_id: ${{ vars.GCP_PROJECT_ID }}
+        # - name: Upload Static Files (If Present)
+        #   if: ${{ hashFiles(format('challenges/{0}/static/**', matrix.challenge)) != '' }}
+        #   uses: google-github-actions/upload-cloud-storage@v2
+        #   with:
+        #     path: "challenges/${{ matrix.challenge }}/static"
+        #     parent: false
+        #     headers: |-
+        #       content-disposition: 'attachment'
+        #     destination: "${{ vars.STATIC_ASSETS_BUCKET_NAME }}/${{ matrix.challenge }}"
+        # - name: Setup SSH key
+        #   run: |
+        #     mkdir -p ~/.ssh
+        #     echo "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/git2ctf
+        #     chmod 600 ~/.ssh/git2ctf
+        #     echo "Host *\n  StrictHostKeyChecking no\n  IdentityFile ~/.ssh/git2ctf" >> ~/.ssh/config
+        # - name: Copy challenge dir
+        #   run: |
+        #     scp -r challenges/${{ matrix.challenge }} \
+        #       ${{ vars.VM_USER }}@${{ vars.VM_NAME }}:/home/${{ vars.VM_USER }}/challenges/
+        # - name: Deploy
+        #   run: |
+        #     ssh ${{ vars.VM_USER }}@${{ vars.VM_NAME }} \
+        #       "cd /home/${{ vars.VM_USER }}/challenges/${{ matrix.challenge }} && sudo docker compose up --build -d"
+        #
+        #      - name: Create CTFd Challenge Entry or Update CTFd Challenge Entry Connection Info
+        #       if: ${{ hashFiles(format('challenges/{0}/docker-compose*.yml', matrix.challenge)) != '' || hashFiles(format('challenges/{0}/docker-compose*.yaml', matrix.challenge)) != '' || hashFiles(format('challenges/{0}/compose*.yml', matrix.challenge)) != '' || hashFiles(format('challenges/{0}/compose*.yaml', matrix.challenge)) != '' }}
+        #      # TODO: test how the logs show up here, ie. if there is a port collision and it cannot deploy on the remote VM
         run: |
           # Clean up old docker compose
-   #       gcloud compute ssh ${{ vars.VM_USER }}@${{ vars.VM_NAME }} --zone=${{ vars.VM_ZONE }} --command="DIR=/home/${{ vars.VM_USER }}/challenges/${{ matrix.challenge }}; if [ -d \$DIR ]; then cd \$DIR && sudo docker compose down; cd .. && rm -rf \$DIR; fi || true"
+    #       gcloud compute ssh ${{ vars.VM_USER }}@${{ vars.VM_NAME }} --zone=${{ vars.VM_ZONE }} --command="DIR=/home/${{ vars.VM_USER }}/challenges/${{ matrix.challenge }}; if [ -d \$DIR ]; then cd \$DIR && sudo docker compose down; cd .. && rm -rf \$DIR; fi || true"
 
     #      gcloud compute scp --zone=${{ vars.VM_ZONE }} --recurse challenges/${{ env.branch }} ${{ vars.VM_USER }}@${{ vars.VM_NAME }}:/home/${{ vars.VM_USER }}/challenges/${{ matrix.challenge }}
 
-     #     gcloud compute ssh ${{ vars.VM_USER }}@${{ vars.VM_NAME }} --zone=${{ vars.VM_ZONE }} --command="cd /home/${{ vars.USER }}/challenges/${{ matrix.challenge }} && sudo docker compose up --build -d" give me the modified workflow, where you ONLY change the turn key concurrency stuff 
-  
+    #     gcloud compute ssh ${{ vars.VM_USER }}@${{ vars.VM_NAME }} --zone=${{ vars.VM_ZONE }} --command="cd /home/${{ vars.USER }}/challenges/${{ matrix.challenge }} && sudo docker compose up --build -d" give me the modified workflow, where you ONLY change the turn key concurrency stuff

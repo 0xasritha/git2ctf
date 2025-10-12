@@ -1,0 +1,14 @@
+display-name-on-ctfd: "Cache Challenge"
+uuid: "8dbe4bf4-d57d-403c-8ad5-0a283162d2cd"
+flag: "MINUTEMAN{web-flag}"
+description: "this is a web challenge" # have example showing newlines in YAML
+connection-info: "{{ HOST }}:{{ PORT }}"
+attribution: "asritha bodepudi" # change this to author name?
+tags:
+  - web
+  - sandbox
+  - js
+hints:
+  - "This is first hint for xss"
+  - "This is the second hint for xss"
+# category: must change folder

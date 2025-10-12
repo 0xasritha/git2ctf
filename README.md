@@ -9,7 +9,52 @@
     /misc
 ```
 
-# Brainstorm
+# Latest Brainstorm
+
+info.yaml:
+
+```
+uuid:
+display-name-on-ctfd:
+description:
+tags:
+author:
+flag:
+connection-info: "{{ HOST }}:{{ PORT }}"
+```
+
+- test the "credibility of the CTFd API" -> does it give me good error messages if I try to do something illegal (like move from static to dynamic)
+
+- testing:
+  - internal server error when I try to create a dynamic challenge without all fields specified
+
+- branches need to be named: `<category-name>/<challenge-name>`
+- upon commits to main:
+  - parse all the info.yaml's within each challenge
+  - then push them to CTFd
+  - new or existing categorized based on UUIDs
+    - have simple Python scripts for this?
+    - if a new uuid within the info.yaml: create a POST request with the new challenge with the rest of the fields filled in by the defaults
+    - if an existing challenge (uuid already exists): create a PATCH for those fields, or if category name changes
+  - then deploy them
+
+- would have to store a map of UUIDs to CTFd id's
+
+- all the above fields locked down in CTFd, create "an alternative page" that admins can view to overwrite?
+
+- port over all the stuff
+- figure out the static file uploads stuff and zipping
+
+- in the docs somewhere, mention looking at docker logs for the ctfd container as method of debugging
+  - lets you change static->dynamic challenges without error (but has empty values for some of the required dynamic values)
+  - however, does NOT let you change from dynamic->static (has internal server error, can look in the Docker logs)
+  - for dynamic challenges: it will throw an internal error when the initial value ("initial") is not provided -> but I should just fill in all 4 dynamic fields to be safe
+
+- put it through some sort of YAML sanitizer to make sure everyone has consistent YAML specs?
+
+- in documentation, put how infra team can add new categories easily
+
+# Old Brainstorm
 
 Local Testing:
 

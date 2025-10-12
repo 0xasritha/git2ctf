@@ -1,9 +1,0 @@
-name: CTFd Test
-
-on:
-  push:
-    branches: ["dev"]
-  # pull_request: A PR can have multiple challenges in it, so should error out on all the challenges touched in that PR
-  # branches: ["dev"]
-# when deploying connection info, if they put in custom connection info instructions manually like (`ssh <>`, should parse that and respect it if updating the URL or port or something)
-#
