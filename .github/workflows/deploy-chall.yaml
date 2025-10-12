@@ -28,6 +28,54 @@ jobs:
           echo "challenges=$json" >> "$GITHUB_OUTPUT"
   # TODO: add a job here that stops execution if no files where changed
   # TODO: should I make some executions only trigger for challenges with /static/ or have docker-compose
+
+  per-challenge-deploy-on-gcp:
+    name: ${{ matrix.challenge }}
+    needs: GET-ALL-CHALLENGES
+    runs-on: ubuntu-latest
+    env:
+    strategy:
+      matrix:
+        challenge: ${{ fromJson(needs.GET-ALL-CHALLENGES.outputs.challenges) }}
+    steps:
+        - uses: actions/checkout@v4
+        - name: Authenticate With GCP (for deploy)
+          uses: google-github-actions/auth@v3
+          with:
+            credentials_json: ${{ secrets.GCP_CREDENTIALS }}
+        - name: "Set up Cloud SDK"
+          uses: "google-github-actions/setup-gcloud@v3"
+          with:
+            version: ">= 363.0.0"
+            project_id: ${{ vars.GCP_PROJECT_ID }}
+        - name: "Deploy Challenge on VM"
+          run: |
+            # had to make challenges directory manually
+            gcloud compute scp --zone=us-east1-b --recurse challenges/${{ matrix.challene }} cyber_f25_0000@challenges:/home/cyber_f25_0000/challenges/${{ matrix.challenge }}
+  #       - name: Upload Static Files (If Present)
+  #         if: ${{ hashFiles(format('challenges/{0}/static/**', matrix.challenge)) != '' }}
+  #         uses: google-github-actions/upload-cloud-storage@v2
+  #         with:
+  #           path: "challenges/${{ matrix.challenge }}/static"
+  #           parent: false
+  #           headers: |-
+  #             content-disposition: 'attachment'
+  #           destination: "${{ vars.STATIC_ASSETS_BUCKET_NAME }}/${{ matrix.challenge }}"
+  #       - name: Setup SSH key
+  #         run: |
+  #           mkdir -p ~/.ssh
+  #           echo "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/git2ctf
+  #           chmod 600 ~/.ssh/git2ctf
+  #           echo "Host *\n  StrictHostKeyChecking no\n  IdentityFile ~/.ssh/git2ctf" >> ~/.ssh/config
+  #       - name: Copy challenge dir
+  #         run: |
+  #           scp -r challenges/${{ matrix.challenge }} \
+  #             ${{ vars.VM_USER }}@${{ vars.VM_NAME }}:/home/${{ vars.VM_USER }}/challenges/
+  #       - name: Deploy
+  #         run: |
+  #           ssh ${{ vars.VM_USER }}@${{ vars.VM_NAME }} \
+  #             "cd /home/${{ vars.VM_USER }}/challenges/${{ matrix.challenge }} && sudo docker compose up --build -d"
+  # 
   per-challenge-deploy-to-ctfd:
     name: ${{ matrix.challenge }}
     needs: GET-ALL-CHALLENGES
@@ -53,39 +101,6 @@ jobs:
         # copy over repo
         # run the create_challenge.py with repo cloned in, path passed in, and CTFD_TOKEN, CTFD_URL, + other stuff? injected as env variables
 
-        # - uses: actions/checkout@v4
-        # - name: Authenticate With GCP (for deploy)
-        #   uses: google-github-actions/auth@v3
-        #   with:
-        #     credentials_json: ${{ secrets.GCP_CREDENTIALS }}
-        # - name: "Set up Cloud SDK"
-        #   uses: "google-github-actions/setup-gcloud@v3"
-        #   with:
-        #     version: ">= 363.0.0"
-        #     project_id: ${{ vars.GCP_PROJECT_ID }}
-        # - name: Upload Static Files (If Present)
-        #   if: ${{ hashFiles(format('challenges/{0}/static/**', matrix.challenge)) != '' }}
-        #   uses: google-github-actions/upload-cloud-storage@v2
-        #   with:
-        #     path: "challenges/${{ matrix.challenge }}/static"
-        #     parent: false
-        #     headers: |-
-        #       content-disposition: 'attachment'
-        #     destination: "${{ vars.STATIC_ASSETS_BUCKET_NAME }}/${{ matrix.challenge }}"
-        # - name: Setup SSH key
-        #   run: |
-        #     mkdir -p ~/.ssh
-        #     echo "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/git2ctf
-        #     chmod 600 ~/.ssh/git2ctf
-        #     echo "Host *\n  StrictHostKeyChecking no\n  IdentityFile ~/.ssh/git2ctf" >> ~/.ssh/config
-        # - name: Copy challenge dir
-        #   run: |
-        #     scp -r challenges/${{ matrix.challenge }} \
-        #       ${{ vars.VM_USER }}@${{ vars.VM_NAME }}:/home/${{ vars.VM_USER }}/challenges/
-        # - name: Deploy
-        #   run: |
-        #     ssh ${{ vars.VM_USER }}@${{ vars.VM_NAME }} \
-        #       "cd /home/${{ vars.VM_USER }}/challenges/${{ matrix.challenge }} && sudo docker compose up --build -d"
         #
         #      - name: Create CTFd Challenge Entry or Update CTFd Challenge Entry Connection Info
         #       if: ${{ hashFiles(format('challenges/{0}/docker-compose*.yml', matrix.challenge)) != '' || hashFiles(format('challenges/{0}/docker-compose*.yaml', matrix.challenge)) != '' || hashFiles(format('challenges/{0}/compose*.yml', matrix.challenge)) != '' || hashFiles(format('challenges/{0}/compose*.yaml', matrix.challenge)) != '' }}
