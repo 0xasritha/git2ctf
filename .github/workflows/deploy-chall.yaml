@@ -26,6 +26,23 @@ jobs:
           json=$(find challenges -mindepth 2 -maxdepth 2 -type d -printf '%P\n' \
             | jq -R . | jq -c -s .)
           echo "challenges=$json" >> "$GITHUB_OUTPUT"
+      - name: Authenticate With GCP (for deploy)
+        uses: google-github-actions/auth@v3
+        with:
+          credentials_json: ${{ secrets.GCP_CREDENTIALS }}
+      - name: "Set up Cloud SDK"
+        uses: "google-github-actions/setup-gcloud@v3"
+        with:
+          version: ">= 363.0.0"
+          project_id: ${{ vars.GCP_PROJECT_ID }}
+      - name: Copy latest files onto VM(s)
+          # had to make challenges directory manually on the GCP VM
+        run: |
+          gcloud compute ssh cyber_f25_0000@challenges --zone=us-east1-b --command="rm -rf /home/cyber_f25_0000/challenges; mkdir challenges"
+          gcloud compute scp --zone=us-east1-b --recurse challenges cyber_f25_0000@challenges:/home/cyber_f25_0000/challenges
+        # then in the next command just make it do "docker compose up -d --build"
+    
+  
   # TODO: add a job here that stops execution if no files where changed
   # TODO: should I make some executions only trigger for challenges with /static/ or have docker-compose
 
