@@ -51,8 +51,19 @@ connection-info: "{{ HOST }}:{{ PORT }}"
   - for dynamic challenges: it will throw an internal error when the initial value ("initial") is not provided -> but I should just fill in all 4 dynamic fields to be safe
 
 - put it through some sort of YAML sanitizer to make sure everyone has consistent YAML specs?
-
+- how to track CTFd changes as a subrepo
 - in documentation, put how infra team can add new categories easily
+
+MVP Goal:
+
+- get the new `info.yaml` working (what I have defined now) for both creating challenges + updating them
+  - static file assets
+- get the pipeline working for deploying challenges onto VMs
+- docs ?
+- port over the current repo for mintueman to the new format
+- PR checks
+  - at the very least, do the port shit
+- update the CTFd visually so it makes stuff readonly
 
 # Old Brainstorm
 

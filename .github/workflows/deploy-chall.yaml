@@ -5,6 +5,8 @@ on:
     branches: ["dev"]
 
 # manual trigger or event triggers a workflow: runs 1(+) jobs, which executes on a runner machine and runs series of 1(+) steps
+#      - note that all the steps in a job execute on the same runner machine (so they will share the same filesystem)
+#         - each step runs in its own shell, so exported variables only persist within a single step unless explicitly saved using the "set-output" or $GITHUB_ENV mechanism
 # steps can run a script you define or run an action (reusable action)
 # each step runs in its own process (so env variables are NOT preserved between steps)
 # workflows defined in .github/workflows
@@ -26,15 +28,28 @@ jobs:
           echo "challenges=$json" >> "$GITHUB_OUTPUT"
   # TODO: add a job here that stops execution if no files where changed
   # TODO: should I make some executions only trigger for challenges with /static/ or have docker-compose
-  per-challenge:
+  per-challenge-deploy-to-ctfd:
     name: ${{ matrix.challenge }}
     needs: GET-ALL-CHALLENGES
     runs-on: ubuntu-latest
+    env:
+      CTFD_TOKEN: ${{ secrets.CTFD_TOKEN }}
+      CTFD_DOMAIN: ${{ vars.CTFD_DOMAIN }}
+      CHALLENGE_PATH: ${{ matrix.challenge }}
+      EXISTING_CHALLENGES: ${{ vars.EXISTING_CHALLENGES }}
     strategy:
       matrix:
         challenge: ${{ fromJson(needs.GET-ALL-CHALLENGES.outputs.challenges) }}
     steps:
-      - uses: actions/checkout@v4
+      - name: Check out repo 
+        uses: actions/checkout@v4 # this will place repo in $GITHUB_WORKSPACE
+      - name: Set up Python 
+        uses: actions/setup-python@v5 # is this latest? 
+      - name: Check if new challenge # reword this 
+        run: python infra/is_new_challenge.py
+      - name: Run script to deploy to CTFd # reword this 
+        run: python infra/create_challenge.py
+
         # copy over repo
         # run the create_challenge.py with repo cloned in, path passed in, and CTFD_TOKEN, CTFD_URL, + other stuff? injected as env variables
 

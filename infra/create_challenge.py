@@ -1,23 +1,28 @@
-# parse YAML file  
-
 # checks if UUID already exists in the map, quit 
-
 # if not, will proceed to create challenge 
-
 # update connection info template string 
-
 # build request with all defaults 
-
 # send request to CTFd 
+# output updated gitub actions variable to stdout so that it can be parsed in and then updated 
 
 #TODO: feed this into chat at the end and tell it to clean up any bad variable names 
 import sys 
+import os 
 import yaml 
 import requests 
 
-CTFD_URL = "http://localhost:8000"
+
+CTFD_DOMAIN = os.getenv("CTFD_DOMAIN") or sys.exit("CTFD_DOMAIN is not set")
+CTFD_TOKEN = os.getenv("CTFD_TOKEN") or sys.exit("CTFD_TOKEN is not set") # "ctfd_4ada4094eb01ab7e37aba83c077b68d900f5ce2d4649df7ee111cb16d8f0f7fa"
+CHALLENGE_PATH = os.getenv("CHALLENGE_PATH") or sys.exit("CHALLENGE_PATH is not set")
+EXISTING_CHALLENGES = os.getenv("EXISTING_CHALLENGES") or sys.exit("EXISTING_CHALLENGES is not set")
+GITHUB_WORKSPACE = os.getenv("GITHUB_WORKSPACE") or sys.exit("GITHUB_WORKSPACE is not set")
+
+# do the one where you safe join paths 
+yaml_path = f"{GITHUB_WORKSPACE}/challenges/${CHALLENGE_PATH}"
+
+# strip from CHALLENGE_PATH
 parent_folder_name = "web" #TODO: need to make this pulled from the path 
-CTFD_TOKEN = "ctfd_4ada4094eb01ab7e37aba83c077b68d900f5ce2d4649df7ee111cb16d8f0f7fa"
 
 # uuid : ctfd-id
 existing_challenges = {
@@ -85,7 +90,7 @@ create_challenge_payload = {
     "max_attempts": 0, # is this the default? does this mean unlimited? 
 }
 
-r = session.post(f"{CTFD_URL}/api/v1/challenges", json=create_challenge_payload, timeout=60)
+r = session.post(f"{CTFD_DOMAIN}/api/v1/challenges", json=create_challenge_payload, timeout=60)
 r.raise_for_status() # if HTTP status code of response indicates an error (e.g. 4xx or 5xx), `raise_for_status()` will raise a `requests.exceptions.HTTPError` #TODO: handle this gracefully 
 create_challenge_response = r.json()
 
