@@ -16,6 +16,8 @@ CTFD_DOMAIN = os.getenv("CTFD_DOMAIN") or sys.exit("CTFD_DOMAIN is not set")
 CTFD_TOKEN = os.getenv("CTFD_TOKEN") or sys.exit("CTFD_TOKEN is not set") # "ctfd_4ada4094eb01ab7e37aba83c077b68d900f5ce2d4649df7ee111cb16d8f0f7fa"
 CHALLENGE_PATH = os.getenv("CHALLENGE_PATH") or sys.exit("CHALLENGE_PATH is not set")
 EXISTING_CHALLENGES = os.getenv("EXISTING_CHALLENGES") or sys.exit("EXISTING_CHALLENGES is not set")
+    # serialize 
+    # make sure this would not break if it is empty 
 GITHUB_WORKSPACE = os.getenv("GITHUB_WORKSPACE") or sys.exit("GITHUB_WORKSPACE is not set")
 
 # do the one where you safe join paths 
@@ -139,4 +141,6 @@ for hint_index, hint in enumerate(challenge_config["hints"], start=1):
 # POST /api/v1/files -> need challenge id 
 
 
+# update the PORTS variable 
 # update the existing_challenges map at the end  
+
