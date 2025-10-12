@@ -35,12 +35,11 @@ jobs:
         with:
           version: ">= 363.0.0"
           project_id: ${{ vars.GCP_PROJECT_ID }}
-      - name:
-          Copy latest files onto VM(s)
-          # had to make challenges directory manually on the GCP VM
+      - name: Copy latest files onto VM(s)
         run: |
-          gcloud compute ssh cyber_f25_0000@challenges --zone=us-east1-b --command="rm -rf /home/cyber_f25_0000/challenges; mkdir challenges"
-          gcloud compute scp --zone=us-east1-b --recurse challenges cyber_f25_0000@challenges:/home/cyber_f25_0000/challenges
+          gcloud compute ssh cyber_f25_0000@challenges --zone=us-east1-b --command="[ -d /home/cyber_f25_0000/challenges ] && rm -rf /home/cyber_f25_0000/challenges"
+          # [ -d <path> ] is used to check if the directory exists, and remove if so 
+          gcloud compute scp --zone=us-east1-b --recurse challenges cyber_f25_0000@challenges:/home/cyber_f25_0000
         # then in the next command just make it do "docker compose up -d --build"
 
   # TODO: add a job here that stops execution if no files where changed
