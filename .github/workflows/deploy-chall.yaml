@@ -35,14 +35,14 @@ jobs:
         with:
           version: ">= 363.0.0"
           project_id: ${{ vars.GCP_PROJECT_ID }}
-      - name: Copy latest files onto VM(s)
+      - name:
+          Copy latest files onto VM(s)
           # had to make challenges directory manually on the GCP VM
         run: |
           gcloud compute ssh cyber_f25_0000@challenges --zone=us-east1-b --command="rm -rf /home/cyber_f25_0000/challenges; mkdir challenges"
           gcloud compute scp --zone=us-east1-b --recurse challenges cyber_f25_0000@challenges:/home/cyber_f25_0000/challenges
         # then in the next command just make it do "docker compose up -d --build"
-    
-  
+
   # TODO: add a job here that stops execution if no files where changed
   # TODO: should I make some executions only trigger for challenges with /static/ or have docker-compose
 
@@ -55,16 +55,16 @@ jobs:
       matrix:
         challenge: ${{ fromJson(needs.GET-ALL-CHALLENGES.outputs.challenges) }}
     steps:
-        - uses: actions/checkout@v4
-        - name: Authenticate With GCP (for deploy)
-          uses: google-github-actions/auth@v3
-          with:
-            credentials_json: ${{ secrets.GCP_CREDENTIALS }}
-        - name: "Set up Cloud SDK"
-          uses: "google-github-actions/setup-gcloud@v3"
-          with:
-            version: ">= 363.0.0"
-            project_id: ${{ vars.GCP_PROJECT_ID }}
+      - uses: actions/checkout@v4
+      - name: Authenticate With GCP (for deploy)
+        uses: google-github-actions/auth@v3
+        with:
+          credentials_json: ${{ secrets.GCP_CREDENTIALS }}
+      - name: "Set up Cloud SDK"
+        uses: "google-github-actions/setup-gcloud@v3"
+        with:
+          version: ">= 363.0.0"
+          project_id: ${{ vars.GCP_PROJECT_ID }}
   #       - name: Upload Static Files (If Present)
   #         if: ${{ hashFiles(format('challenges/{0}/static/**', matrix.challenge)) != '' }}
   #         uses: google-github-actions/upload-cloud-storage@v2
@@ -88,7 +88,7 @@ jobs:
   #         run: |
   #           ssh ${{ vars.VM_USER }}@${{ vars.VM_NAME }} \
   #             "cd /home/${{ vars.VM_USER }}/challenges/${{ matrix.challenge }} && sudo docker compose up --build -d"
-  # 
+  #
   per-challenge-deploy-to-ctfd:
     name: ${{ matrix.challenge }}
     needs: GET-ALL-CHALLENGES
@@ -102,26 +102,14 @@ jobs:
       matrix:
         challenge: ${{ fromJson(needs.GET-ALL-CHALLENGES.outputs.challenges) }}
     steps:
-      - name: Check out repo 
+      - name: Check out repo
         uses: actions/checkout@v4 # this will place repo in $GITHUB_WORKSPACE
-      - name: Set up Python 
-        uses: actions/setup-python@v5 # is this latest? 
-      - name: Check if new challenge # reword this 
+      - name: Set up Python
+        uses: actions/setup-python@v5 # is this latest?
+      - name: Check if new challenge # reword this
         run: python infra/is_new_challenge.py
-      - name: Run script to deploy to CTFd # reword this 
+      - name: Run script to deploy to CTFd # reword this
         run: python infra/create_challenge.py
 
         # copy over repo
         # run the create_challenge.py with repo cloned in, path passed in, and CTFD_TOKEN, CTFD_URL, + other stuff? injected as env variables
-
-        #
-        #      - name: Create CTFd Challenge Entry or Update CTFd Challenge Entry Connection Info
-        #       if: ${{ hashFiles(format('challenges/{0}/docker-compose*.yml', matrix.challenge)) != '' || hashFiles(format('challenges/{0}/docker-compose*.yaml', matrix.challenge)) != '' || hashFiles(format('challenges/{0}/compose*.yml', matrix.challenge)) != '' || hashFiles(format('challenges/{0}/compose*.yaml', matrix.challenge)) != '' }}
-        #      # TODO: test how the logs show up here, ie. if there is a port collision and it cannot deploy on the remote VM
-        run: |
-          # Clean up old docker compose
-    #       gcloud compute ssh ${{ vars.VM_USER }}@${{ vars.VM_NAME }} --zone=${{ vars.VM_ZONE }} --command="DIR=/home/${{ vars.VM_USER }}/challenges/${{ matrix.challenge }}; if [ -d \$DIR ]; then cd \$DIR && sudo docker compose down; cd .. && rm -rf \$DIR; fi || true"
-
-    #      gcloud compute scp --zone=${{ vars.VM_ZONE }} --recurse challenges/${{ env.branch }} ${{ vars.VM_USER }}@${{ vars.VM_NAME }}:/home/${{ vars.VM_USER }}/challenges/${{ matrix.challenge }}
-
-    #     gcloud compute ssh ${{ vars.VM_USER }}@${{ vars.VM_NAME }} --zone=${{ vars.VM_ZONE }} --command="cd /home/${{ vars.USER }}/challenges/${{ matrix.challenge }} && sudo docker compose up --build -d" give me the modified workflow, where you ONLY change the turn key concurrency stuff
