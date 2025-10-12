@@ -50,7 +50,7 @@ jobs:
     name: ${{ matrix.challenge }}
     needs: GET-ALL-CHALLENGES
     runs-on: ubuntu-latest
-    env:
+    # env:
     strategy:
       matrix:
         challenge: ${{ fromJson(needs.GET-ALL-CHALLENGES.outputs.challenges) }}
@@ -65,10 +65,6 @@ jobs:
           with:
             version: ">= 363.0.0"
             project_id: ${{ vars.GCP_PROJECT_ID }}
-        - name: "Deploy Challenge on VM"
-          run: |
-            # had to make challenges directory manually
-            gcloud compute scp --zone=us-east1-b --recurse challenges/${{ matrix.challene }} cyber_f25_0000@challenges:/home/cyber_f25_0000/challenges/${{ matrix.challenge }}
   #       - name: Upload Static Files (If Present)
   #         if: ${{ hashFiles(format('challenges/{0}/static/**', matrix.challenge)) != '' }}
   #         uses: google-github-actions/upload-cloud-storage@v2
