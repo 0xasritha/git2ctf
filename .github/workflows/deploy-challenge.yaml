@@ -18,3 +18,4 @@ jobs:
           json=$(find challenges -mindepth 2 -maxdepth 2 -type d -printf '%P\n' \
             | jq -R . | jq -c -s .)
           echo "challenges=$json" >> "$GITHUB_OUTPUT"
+          echo "$json"
