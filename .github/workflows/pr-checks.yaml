@@ -38,9 +38,9 @@ jobs:
           import os
           import sys
           #TODO: trim out the "challenges/" here?
-          changed = [c for c in changed if c.startswith("challenges/")]
           # Filter out empty and non-challenge paths if needed - TODO: we don't need this
           changed = os.getenv("ALL_CHANGED_FILES", "").strip().split()
+          changed = [c for c in changed if c.startswith("challenges/")]
           changed = sorted(set(changed))
           json_output = json.dumps(changed)
           print(f"json={json_output}")
