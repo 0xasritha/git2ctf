@@ -1,46 +1,71 @@
 name: PR Checks
+
 on:
   pull_request:
-    branches: [dev]
+    branches: ["**"] # or restrict to [dev] if that's truly what you want
 
 jobs:
   get-challenges:
-    runs-on: ubuntu-latest
     name: Get challenges in PR
+    runs-on: ubuntu-latest
     permissions:
       pull-requests: read
     outputs:
-      challenge-paths: ${{ steps.changed-files.outputs.ALL_CHANGED_FILES }}
+      challenge-paths: ${{ steps.collect.outputs.json }}
     steps:
       - name: Checkout
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
+
       - name: Get changed files
-        id: changed-files
-        uses: tj-actions/changed-files@24d32ffd492484c1d75e0c0b894501ddb9d30d62 # v47
+        id: changed
+        uses: tj-actions/changed-files@v47
         with:
           files: challenges/**
-      - name: List all changed files
-        id: changed-files-list
-        env:
-          # TODO: do we want to strip the "/challenges"?
-          ALL_CHANGED_FILES: ${{ steps.changed-files.outputs.all_changed_files }}
+
+      - name: Log all changed files
         run: |
-          for file in ${ALL_CHANGED_FILES}; do
-            echo "$file was changed"
+          for f in ${{ steps.changed.outputs.all_changed_files }}; do
+            echo "$f was changed"
           done
-          echo ${ALL_CHANGED_FILES} >> "$GITHUB_OUTPUT"
+
+      - name: Collect challenge paths as JSON
+        id: collect
+        run: |
+          python <<'PYCODE'
+          import json
+          import os
+          import sys
+
+          # Get the space or newline-separated changed files
+          changed = os.getenv("ALL_CHANGED_FILES", "").strip().split()
+          # Filter out empty and non-challenge paths if needed
+          changed = [c for c in changed if c.startswith("challenges/")]
+
+          # Deduplicate and sort (optional)
+          changed = sorted(set(changed))
+
+          # Convert to JSON array
+          json_output = json.dumps(changed)
+
+          print(f"json={json_output}")
+          # Write to GITHUB_OUTPUT so next job can consume
+          with open(os.environ["GITHUB_OUTPUT"], "a") as f:
+              print(f"json={json_output}", file=f)
+          PYCODE
+        env:
+          ALL_CHANGED_FILES: ${{ steps.changed.outputs.all_changed_files }}
+
   run-checks:
-    runs-on: ubuntu-latest
     name: Run the checks
+    runs-on: ubuntu-latest
     needs: get-challenges
+    # Skip if no challenge files changed
+    if: ${{ needs.get-challenges.outputs.challenge-paths != '[]' }}
     strategy:
       matrix:
-        challenge-path: ${{ fromJSON(needs.get-challenges.outputs.challenge-paths )}}
+        challenge-path: ${{ fromJSON(needs.get-challenges.outputs.challenge-paths) }}
     steps:
       - name: Print path
-        env:
-          challenge-path: ${{ matrix.challenge-path }}
-        run: |
-          echo $challenge-path
+        run: echo "${{ matrix.challenge-path }}"
