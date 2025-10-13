@@ -65,11 +65,14 @@ jobs:
         uses: actions/checkout@v4
       # - name: Install Docker Compose
       #   uses: docker/setup-compose-action@v3
-      - name: good compose name
+      - name: Compose file is right name
         shell: python
+        env:
+          CHALLENGE_PATH: ${{ matrix.challenge-path }}
         run: |
           import os 
           from pathlib import Path
+          CHALLENGE_PATH = os.getenv("CHALLENGE_PATH") or sys.exit("CHALLENGE_PATH is not set")
           bad_names = [
                 "docker-compose.yaml",
                 "docker-compose.yml",
