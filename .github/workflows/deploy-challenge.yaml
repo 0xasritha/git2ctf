@@ -45,6 +45,7 @@ jobs:
           version: ">= 363.0.0"
           project_id: ${{ vars.GCP_PROJECT_ID }}
 
+      # TODO: I think it makes sense to make this into a Python script instead of bash and then look up how the json matrices are suppoesd to work
       - name: Copy latest files onto VM and run builds
         id: collect
         shell: bash
@@ -90,12 +91,13 @@ jobs:
           # Expose a matrix with [{challenge, code}, ...]
         #  echo "matrix=$(jq -c 'to_entries | map({challenge:.key, code:.value})' <<<"$results")" >> "$GITHUB_OUTPUT"
 
+        # TODO: redo dynamic matrix strategy: https://medium.com/@bill.nz/github-actions-dynamic-matrix-strategy-fromjson-af606f11d3f4
+
   post-step:
     needs: update-gcp
     runs-on: ubuntu-latest
     strategy:
-      matrix:
-        include: ${{ fromJson(needs.update-gcp.outputs.matrix) }}
+      matrix: ${{ fromJson(needs.update-gcp.outputs.matrix) }}
     steps:
       - name: Print info
         run: |
