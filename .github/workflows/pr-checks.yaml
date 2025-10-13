@@ -1,38 +1,45 @@
 name: PR Checks
 on:
   pull_request:
+    branches: [dev]
 
 jobs:
-  detect:
+  get-challenges:
     runs-on: ubuntu-latest
-    permissions:
-      contents: read
     steps:
       - uses: actions/checkout@v4
+      - name: Get changed files
+        id: changed-files
+        uses: tj-actions/changed-files@24d32ffd492484c1d75e0c0b894501ddb9d30d62
         with:
-          fetch-depth: 0 # fetch entire git history instead of just most recent commit
-
-      - name: Filter challenge paths
-        id: filter
-        uses: dorny/paths-filter@v3
-        with:
-          filters: |
-            challenges:
-              - 'challenges/**/**'
-
-      - name: Show matched files
+          files: challenges/**/**
+      - name: Run step if any challenge folder files change
+        if: steps.changed-files.outputs.any_changed == 'true'
+        env:
+          ALL_CHANGED_FILES: ${{ steps.changed-files-specific.outputs.all_changed_files }}
         run: |
-          echo "Files changed under challenges:"
-          echo "${{ steps.filter.outputs.challenges }}"
+          echo "One or more files in the docs folder has changed."
+          echo "List all the files that have changed: $ALL_CHANGED_FILES"
+  changed_files:
+    # NOTE:
+    # - This is limited to pull_request* events and would raise an error for other events.
+    # - A maximum of 3000 files can be returned.
+    # - For more flexibility and no limitations see "Using local .git directory" above.
 
-      - name: Derive challenge directories
+    runs-on: ubuntu-latest # windows-latest || macos-latest
+    name: Test changed-files
+    permissions:
+      pull-requests: read
+
+    steps:
+      - name: Get changed files
+        id: changed-files
+        uses: tj-actions/changed-files@24d32ffd492484c1d75e0c0b894501ddb9d30d62 # v47
+
+      - name: List all changed files
+        env:
+          ALL_CHANGED_FILES: ${{ steps.changed-files.outputs.all_changed_files }}
         run: |
-          # filter outputs.challenges is a JSON list (e.g. ["challenges/web/xss/file1", ...])
-          files="${{ steps.filter.outputs.challenges }}"
-          # Use jq to map to just the category/challenge level
-          dirs=$(echo "$files" | jq -r '.[] | split("/") | "challenges/"+.[1]+"/"+.[2]' | sort -u)
-          echo "challenge_dirs=$dirs"
-          # You can also emit as JSON if you want
-          dirs_json=$(echo "$dirs" | jq -R . | jq -s .)
-          echo "challenge_dirs_json=$dirs_json"
-          echo "challenge_dirs=$dirs_json" >> "$GITHUB_OUTPUT"
+          for file in ${ALL_CHANGED_FILES}; do
+            echo "$file was changed"
+          done
