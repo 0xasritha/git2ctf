@@ -1,0 +1,220 @@
+name: Deploy Challenges
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - "challenges/**"
+      - ".github/workflows/**"
+
+jobs:
+  # 1) Build the matrix of challenge paths: challenges/<category>/<challenge>
+  GET-ALL-CHALLENGES:
+    runs-on: ubuntu-latest
+    outputs:
+      challenges: ${{ steps.get-challenges.outputs.challenges }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Get Challenges
+        id: get-challenges
+        shell: bash
+        run: |
+          # Find all challenge dirs two levels deep: /challenges/<category>/<challenge>
+          json=$(find challenges -mindepth 2 -maxdepth 2 -type d -printf '%P\n' \
+            | jq -R . | jq -c -s .)
+          echo "challenges=$json" >> "$GITHUB_OUTPUT"
+
+  # 2) Single-shot deploy: copy once, then compose up each challenge in a single SSH loop.
+  #    Do NOT fail the job if an individual challenge fails; store per-challenge logs/status as artifacts.
+  DEPLOY-ALL-ONCE:
+    runs-on: ubuntu-latest
+    needs: GET-ALL-CHALLENGES
+    env:
+      GCP_PROJECT_ID: ${{ vars.GCP_PROJECT_ID }}
+      ZONE: us-east1-b
+      VM_NAME: challenges
+      VM_USER: cyber_f25_0000
+      CHALLENGES_JSON: ${{ needs.GET-ALL-CHALLENGES.outputs.challenges }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Authenticate With GCP (for deploy)
+        uses: google-github-actions/auth@v3
+        with:
+          credentials_json: ${{ secrets.GCP_CREDENTIALS }}
+
+      - name: Set up Cloud SDK
+        uses: google-github-actions/setup-gcloud@v3
+        with:
+          version: ">= 363.0.0"
+          project_id: ${{ env.GCP_PROJECT_ID }}
+
+      # Copy the entire challenges/ tree once
+      - name: Copy challenges directory to VM
+        shell: bash
+        run: |
+          gcloud compute ssh "${{ env.VM_USER }}@${{ env.VM_NAME }}" --zone="${{ env.ZONE }}" \
+            --command='[ -d /home/${USER}/challenges ] && rm -rf /home/${USER}/challenges || true'
+          gcloud compute scp --recurse --zone="${{ env.ZONE }}" \
+            challenges "${{ env.VM_USER }}@${{ env.VM_NAME }}:/home/${{ env.VM_USER }}/"
+
+      # Run docker compose once per challenge, keep going on errors, collect logs & status remotely
+      - name: Compose up all challenges on VM (continue on error per challenge)
+        shell: bash
+        run: |
+          # Produce a simple newline list from the JSON (runner side).
+          mapfile -t CHALL_LIST < <(jq -r '.[]' <<< "${CHALLENGES_JSON}")
+
+          # Build a newline-separated list we can pass into the remote bash cleanly.
+          printf "%s\n" "${CHALL_LIST[@]}" > /tmp/challenges.list
+
+          # Remote script:
+          REMOTE_SCRIPT='
+            set -uo pipefail
+            LOG_ROOT="/home/${USER}/deploy-logs"
+            mkdir -p "$LOG_ROOT"
+            STATUS_SUMMARY="$LOG_ROOT/summary.tsv"
+            : > "$STATUS_SUMMARY"
+
+            sanitize() { echo "$1" | sed "s#[/ ]#__#g"; }
+
+            while IFS= read -r relpath; do
+              [ -z "$relpath" ] && continue
+              cdir="/home/${USER}/challenges/$relpath"
+              name_sanitized="$(sanitize "$relpath")"
+              log_file="$LOG_ROOT/${name_sanitized}.log"
+              status_file="$LOG_ROOT/${name_sanitized}.status"
+
+              # Detect compose file (compose.yaml OR docker-compose.yml)
+              compose_file=""
+              if [ -f "$cdir/compose.yaml" ]; then
+                compose_file="$cdir/compose.yaml"
+              elif [ -f "$cdir/docker-compose.yml" ]; then
+                compose_file="$cdir/docker-compose.yml"
+              fi
+
+              if [ -z "$compose_file" ]; then
+                printf "SKIP: %s (no compose file)\\n" "$relpath" | tee -a "$log_file"
+                echo "SKIP" > "$status_file"
+                printf "%s\tSKIP\tno-compose\\n" "$relpath" >> "$STATUS_SUMMARY"
+                continue
+              fi
+
+              {
+                echo "==> Starting build: $relpath ($(date -Is))"
+                echo "Using compose file: $compose_file"
+                (cd "$cdir" && sudo docker compose -f "$compose_file" up -d --build)
+                rc=$?
+                echo "Exit code: $rc"
+                echo "<== Finished: $relpath ($(date -Is))"
+                exit $rc
+              } &> "$log_file"
+
+              rc=$?
+              if [ $rc -eq 0 ]; then
+                echo "OK" > "$status_file"
+                printf "%s\tOK\tbuild-ok\\n" "$relpath" >> "$STATUS_SUMMARY"
+              else
+                echo "FAIL" > "$status_file"
+                printf "%s\tFAIL\trc=%s\\n" "$relpath" "$rc" >> "$STATUS_SUMMARY"
+              fi
+            done < /home/${USER}/challenges.list
+          '
+
+          # Copy the list to the VM and run the remote script once.
+          gcloud compute scp --zone="${{ env.ZONE }}" /tmp/challenges.list \
+            "${{ env.VM_USER }}@${{ env.VM_NAME }}:/home/${{ env.VM_USER }}/challenges.list"
+
+          gcloud compute ssh "${{ env.VM_USER }}@${{ env.VM_NAME }}" --zone="${{ env.ZONE }}" \
+            --command="bash -lc $(printf '%q' "$REMOTE_SCRIPT")"
+
+      # Pull back logs to the runner and publish one artifact per challenge
+      - name: Retrieve logs from VM
+        shell: bash
+        run: |
+          rm -rf ./deploy-logs && mkdir -p ./deploy-logs
+          gcloud compute scp --recurse --zone="${{ env.ZONE }}" \
+            "${{ env.VM_USER }}@${{ env.VM_NAME }}:/home/${{ env.VM_USER }}/deploy-logs" ./ \
+            || true
+
+      - name: Upload per-challenge artifacts (logs + status)
+        shell: bash
+        run: |
+          shopt -s nullglob
+          for status in deploy-logs/*.status; do
+            base=$(basename "$status" .status)
+            # Each artifact contains: <name>.status and <name>.log
+            mkdir -p "artifacts/$base"
+            cp "deploy-logs/$base.status" "artifacts/$base/status"
+            [ -f "deploy-logs/$base.log" ] && cp "deploy-logs/$base.log" "artifacts/$base/log"
+            echo "Uploading artifact buildlog-$base"
+            tar -C "artifacts/$base" -czf "buildlog-$base.tgz" .
+            ghapi="" # placeholder in case you pipe to GH API; using actions/upload-artifact instead
+          done
+
+      - name: Upload artifacts (actions/upload-artifact)
+        uses: actions/upload-artifact@v4
+        with:
+          name: all-build-logs
+          path: buildlog-*.tgz
+          if-no-files-found: ignore
+
+  # 3) Per-challenge verification job: one shard per challenge.
+  #    It downloads that challenge's log+status and fails if status == FAIL.
+  PER-CHALLENGE-VERIFY:
+    name: Verify ${{ matrix.challenge }}
+    needs:
+      - GET-ALL-CHALLENGES
+      - DEPLOY-ALL-ONCE
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        challenge: ${{ fromJson(needs.GET-ALL-CHALLENGES.outputs.challenges) }}
+    steps:
+      - name: Compute artifact name for this challenge
+        id: names
+        shell: bash
+        run: |
+          # Sanitize: replace / and space with __ to match job2 naming
+          SAFE_CHALL=$(echo "${{ matrix.challenge }}" | sed 's#[/ ]#__#g')
+          echo "safe=${SAFE_CHALL}" >> "$GITHUB_OUTPUT"
+
+      - name: Download artifacts bundle
+        uses: actions/download-artifact@v4
+        with:
+          name: all-build-logs
+
+      - name: Extract this challenge's archive
+        id: extract
+        shell: bash
+        run: |
+          set -e
+          FILE="buildlog-${{ steps.names.outputs.safe }}.tgz"
+          if [ ! -f "$FILE" ]; then
+            echo "No artifact for this challenge (likely SKIP/no compose)."
+            echo "status=SKIP" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          mkdir -p out && tar -C out -xzf "$FILE"
+          if [ -f out/status ]; then
+            STATUS=$(cat out/status | tr -d '\r\n')
+            echo "status=$STATUS" >> "$GITHUB_OUTPUT"
+          else
+            echo "status=UNKNOWN" >> "$GITHUB_OUTPUT"
+          fi
+          echo "---- Build Log (first 200 lines) ----"
+          [ -f out/log ] && head -n 200 out/log || echo "(no log)"
+
+      - name: Fail if this challenge failed to build
+        if: ${{ steps.extract.outputs.status == 'FAIL' }}
+        shell: bash
+        run: |
+          echo "This challenge failed to build (status=FAIL). See log above."
+          exit 1
+
+      - name: Mark success / skip
+        if: ${{ steps.extract.outputs.status != 'FAIL' }}
+        shell: bash
+        run: |
+          echo "Status for ${{ matrix.challenge }}: ${{ steps.extract.outputs.status }}"

@@ -47,6 +47,10 @@ jobs:
   # TODO: add a job here that stops execution if no files where changed
   # TODO: should I make some executions only trigger for challenges with /static/ or have docker-compose
 
+  set-up-GCP-VMs:
+    runs-on: ubuntu-latest
+    needs: GET-ALL-CHALLENGES
+
   # dynamic challenges: crypto/xor, misc/pyjail, pwn/shellcode, web/xss
   per-challenge-deploy-on-gcp:
     name: ${{ matrix.challenge }}
