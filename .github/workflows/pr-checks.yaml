@@ -63,8 +63,8 @@ jobs:
         run: echo "${{ matrix.challenge-path }}"
       - name: Checkout
         uses: actions/checkout@v4
-      - name: Install Docker Compose
-        uses: docker/setup-compose-action@v3
+      # - name: Install Docker Compose
+      #   uses: docker/setup-compose-action@v3
       - name: good compose name
         shell: python
         run: |
