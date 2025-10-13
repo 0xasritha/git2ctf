@@ -4,16 +4,13 @@ on:
     branches: [dev]
 
 jobs:
-  changed_files:
-    # NOTE:
-    # - This is limited to pull_request* events and would raise an error for other events.
-    # - A maximum of 3000 files can be returned.
-    # - For more flexibility and no limitations see "Using local .git directory" above.
-
-    runs-on: ubuntu-latest # windows-latest || macos-latest
-    name: Test changed-files
+  get-challenges:
+    runs-on: ubuntu-latest
+    name: Get challenges in PR
     permissions:
       pull-requests: read
+    outputs:
+      challenge-paths: ${{ steps.changed-files.outputs.ALL_CHANGED_FILES }}
 
     steps:
       - name: Get changed files
@@ -23,9 +20,25 @@ jobs:
           files: challenges/**
 
       - name: List all changed files
+        id: changed-files
         env:
+          # TODO: do we want to strip the "/challenges"?
           ALL_CHANGED_FILES: ${{ steps.changed-files.outputs.all_changed_files }}
         run: |
           for file in ${ALL_CHANGED_FILES}; do
             echo "$file was changed"
           done
+          echo ${ALL_CHANGED_FILES} >> "$GITHUB_OUTPUT"
+
+  run-checks:
+    runs-on: ubuntu-latest
+    needs: get-challenges
+    strategy:
+      matrix:
+        challenge-path: ${{ fromJSON(needs.get-challenges.outputs.challenge-paths )}}
+    steps:
+      - name: Print path
+        env:
+          challenge-path: ${{ matrix.challenge-path }}
+        run: |
+          echo $challenge-path
