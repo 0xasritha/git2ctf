@@ -10,7 +10,7 @@ import subprocess
 import json 
 
 
-USED_PORTS = os.getenv("USED_PORTS") or sys.exit("USED_PORTS is not set")
+# USED_PORTS = os.getenv("USED_PORTS") or sys.exit("USED_PORTS is not set")
 CHALLENGE_PATH = os.getenv("CHALLENGE_PATH") or sys.exit("CHALLENGE_PATH is not set")
     # serialize 
     # make sure this would not break if it is empty 
@@ -115,9 +115,9 @@ def check_connection_string():
 def zip_static_assets(): # must be zipped the same way  
     return False 
 
-
 CHECKS = { 
-
+    "unique-port": unique_port, 
+    "compose-file-named-correctly": compose_file_named_correctly, 
 }
 
 if len(sys.argv) != 1: 
