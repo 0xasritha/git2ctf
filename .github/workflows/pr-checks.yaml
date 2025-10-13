@@ -1,38 +1,22 @@
 name: PR Checks
 on:
   pull_request:
+    branches: [dev]
 
 jobs:
-  detect:
+  get-challenges:
     runs-on: ubuntu-latest
-    permissions:
-      contents: read
     steps:
       - uses: actions/checkout@v4
+      - name: Get changed files
+        id: changed-files
+        uses: tj-actions/changed-files@24d32ffd492484c1d75e0c0b894501ddb9d30d62
         with:
-          fetch-depth: 0 # fetch entire git history instead of just most recent commit
-
-      - name: Filter challenge paths
-        id: filter
-        uses: dorny/paths-filter@v3
-        with:
-          filters: |
-            challenges:
-              - 'challenges/**/**'
-
-      - name: Show matched files
+          files: challenges/**/**
+      - name: Run step if any challenge folder files change
+        if: steps.changed-files.outputs.any_changed == 'true'
+        env:
+          ALL_CHANGED_FILES: ${{ steps.changed-files-specific.outputs.all_changed_files }}
         run: |
-          echo "Files changed under challenges:"
-          echo "${{ steps.filter.outputs.challenges }}"
-
-      - name: Derive challenge directories
-        run: |
-          # filter outputs.challenges is a JSON list (e.g. ["challenges/web/xss/file1", ...])
-          files="${{ steps.filter.outputs.challenges }}"
-          # Use jq to map to just the category/challenge level
-          dirs=$(echo "$files" | jq -r '.[] | split("/") | "challenges/"+.[1]+"/"+.[2]' | sort -u)
-          echo "challenge_dirs=$dirs"
-          # You can also emit as JSON if you want
-          dirs_json=$(echo "$dirs" | jq -R . | jq -s .)
-          echo "challenge_dirs_json=$dirs_json"
-          echo "challenge_dirs=$dirs_json" >> "$GITHUB_OUTPUT"
+          echo "One or more files in the docs folder has changed."
+          echo "List all the files that have changed: $ALL_CHANGED_FILES"
