@@ -69,7 +69,7 @@ jobs:
           project_id: ${{ vars.GCP_PROJECT_ID }}
       - name: "Run each dynamic challenge"
         run: |
-          gcloud compute ssh cyber_f25_0000@challenges --zone=us-east1-b --command="sudo docker compose up -f /home/cyber_f25_0000/challenges/${{ matrix.challenge }} -d --build"
+          gcloud compute ssh cyber_f25_0000@challenges --zone=us-east1-b --command="sudo docker compose -f /home/cyber_f25_0000/challenges/${{ matrix.challenge }} up -d --build"
 
   #       - name: Upload Static Files (If Present)
   #         if: ${{ hashFiles(format('challenges/{0}/static/**', matrix.challenge)) != '' }}
