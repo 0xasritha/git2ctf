@@ -40,7 +40,8 @@ jobs:
 
           # Get the space or newline-separated changed files
           changed = os.getenv("ALL_CHANGED_FILES", "").strip().split()
-          # Filter out empty and non-challenge paths if needed
+          #TODO: trim out the "challenges/" here? 
+          # Filter out empty and non-challenge paths if needed - TODO: we don't need this 
           changed = [c for c in changed if c.startswith("challenges/")]
 
           # Deduplicate and sort (optional)
@@ -69,3 +70,8 @@ jobs:
     steps:
       - name: Print path
         run: echo "${{ matrix.challenge-path }}"
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Install Docker Compose
+        uses: docker/setup-compose-action@v3
+      # - name: Run checks
