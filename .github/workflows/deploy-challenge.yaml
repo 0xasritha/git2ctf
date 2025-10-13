@@ -56,14 +56,15 @@ jobs:
             results=$(jq --arg c "$challenge" --argjson rc "$rc" '. + {($c):$rc}' <<<"$results")
           done 
           echo "matrix=$(jq -c 'to_entries | map({challenge:.key, code:.value})' <<<"$results")" >> "$GITHUB_OUTPUT"
-      - name: Run per-challenge post-step
-        needs: [collect]
-        runs-on: ubuntu-latest
-        strategy:
-          matrix:
-            include: ${{ fromJson(needs.collect.outputs.matrix) }}
-        steps:
-          - name: Print info
-            run: |
-              echo "Challenge: ${{ matrix.challenge }}"
-              echo "Exit code: ${{ matrix.code }}"
+  post-step:
+    - name: Run per-challenge post-step
+      needs: update-gcp
+      runs-on: ubuntu-latest
+      strategy:
+        matrix:
+          include: ${{ fromJson(needs.update-gcp.outputs.matrix) }}
+      steps:
+        - name: Print info
+          run: |
+            echo "Challenge: ${{ matrix.challenge }}"
+            echo "Exit code: ${{ matrix.code }}"
