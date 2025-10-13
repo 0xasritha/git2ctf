@@ -73,8 +73,22 @@ jobs:
             echo $results
           done
 
+          # DEBUG (pretty print map)
+          echo "results map:"
+          echo "$results" | jq .
+
+          # Convert to matrix
+          matrix=$(jq -c 'to_entries | map({challenge: .key, code: .value})' <<<"$results")
+
+          # DEBUG (pretty print matrix)
+          echo "matrix array:"
+          echo "$matrix" | jq .
+
+          # Emit for Actions
+          echo "matrix=$matrix" >> "$GITHUB_OUTPUT"
+
           # Expose a matrix with [{challenge, code}, ...]
-          echo "matrix=$(jq -c 'to_entries | map({challenge:.key, code:.value})' <<<"$results")" >> "$GITHUB_OUTPUT"
+        #  echo "matrix=$(jq -c 'to_entries | map({challenge:.key, code:.value})' <<<"$results")" >> "$GITHUB_OUTPUT"
 
   post-step:
     needs: update-gcp
