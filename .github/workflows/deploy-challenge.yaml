@@ -1,0 +1,20 @@
+name: Deploy Challenges
+
+on:
+  push:
+    branches: ["dev"]
+
+jobs:
+  get-all-challenges:
+    runs-on: ubuntu-latest
+    outputs:
+      challenges: ${{ steps.get-challenges.outputs.challenges }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: Get Challenges
+        id: get-challenges
+        run: |
+          # Find all challenge dirs two levels deep: /challenges/<category>/<challenge>
+          json=$(find challenges -mindepth 2 -maxdepth 2 -type d -printf '%P\n' \
+            | jq -R . | jq -c -s .)
+          echo "challenges=$json" >> "$GITHUB_OUTPUT"

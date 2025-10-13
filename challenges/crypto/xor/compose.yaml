@@ -2,5 +2,5 @@ services:
   chall:
     build: .
     ports:
-      - "8000:8001"
+      - "8005:8001"
     restart: unless-stopped

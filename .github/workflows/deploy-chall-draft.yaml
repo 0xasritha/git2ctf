@@ -1,4 +1,4 @@
-name: Deploy Challenges
+name: Deploy Challenges Draft
 
 on:
   push:
@@ -50,6 +50,17 @@ jobs:
   set-up-GCP-VMs:
     runs-on: ubuntu-latest
     needs: GET-ALL-CHALLENGES
+    # docker compose up -d --build &> challenge-logs/<challenge-name>.log
+    # exit_code=$?
+    # this command will overwrite the contents of the log file, do you need to make it? also need to make challenge-logs directory?
+    # this command will return 1 if it failed
+    # output a matrix that is path to exit codes, depending on exit codes fail or not fail
+
+    # should only run this if the challenge folder has a compose.yaml
+    # gcloud compute ssh cyber_f25_0000@challenges --zone=us-east1-b --command="sudo docker compose -f /home/cyber_f25_0000/challenges/crypto/xor/compose.yaml up -d --build" &> challenge.log
+    # challenge.log will be on the runner machine
+    # the exit code will come from gcloud compute ssh, which is propogated from the remote command's exit code back to the local shell
+    # so $? on local machine will give you exit code of the remote command, unless the SSH connection itself failed (in which gcloud exists with 255)
 
   # dynamic challenges: crypto/xor, misc/pyjail, pwn/shellcode, web/xss
   per-challenge-deploy-on-gcp:
@@ -76,29 +87,6 @@ jobs:
           # gcloud compute ssh cyber_f25_0000@challenges --zone=us-east1-b --command="sudo docker compose -f /home/cyber_f25_0000/challenges/${{ matrix.challenge }} up -d --build"
            gcloud compute ssh cyber_f25_0000@challenges --zone=us-east1-b --command="ls"
 
-  #       - name: Upload Static Files (If Present)
-  #         if: ${{ hashFiles(format('challenges/{0}/static/**', matrix.challenge)) != '' }}
-  #         uses: google-github-actions/upload-cloud-storage@v2
-  #         with:
-  #           path: "challenges/${{ matrix.challenge }}/static"
-  #           parent: false
-  #           headers: |-
-  #             content-disposition: 'attachment'
-  #           destination: "${{ vars.STATIC_ASSETS_BUCKET_NAME }}/${{ matrix.challenge }}"
-  #       - name: Setup SSH key
-  #         run: |
-  #           mkdir -p ~/.ssh
-  #           echo "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/git2ctf
-  #           chmod 600 ~/.ssh/git2ctf
-  #           echo "Host *\n  StrictHostKeyChecking no\n  IdentityFile ~/.ssh/git2ctf" >> ~/.ssh/config
-  #       - name: Copy challenge dir
-  #         run: |
-  #           scp -r challenges/${{ matrix.challenge }} \
-  #             ${{ vars.VM_USER }}@${{ vars.VM_NAME }}:/home/${{ vars.VM_USER }}/challenges/
-  #       - name: Deploy
-  #         run: |
-  #           ssh ${{ vars.VM_USER }}@${{ vars.VM_NAME }} \
-  #             "cd /home/${{ vars.VM_USER }}/challenges/${{ matrix.challenge }} && sudo docker compose up --build -d"
   #
   per-challenge-deploy-to-ctfd:
     name: ${{ matrix.challenge }}
