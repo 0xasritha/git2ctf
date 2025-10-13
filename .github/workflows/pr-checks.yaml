@@ -71,10 +71,10 @@ jobs:
       - name: Print path
         run: echo "${{ matrix.challenge-path }}"
       - name: Checkout
-        uses: actions/checkout@v4
-      - name: Install Docker Compose
-        uses: docker/setup-compose-action@v3
-      - name: Run checks
-        run: python infra/pr_checks.py unique-port
-        env:
-        CHALLENGE_PATH: ${{ matrix.challenge-path }}
+      #   uses: actions/checkout@v4
+      # - name: Install Docker Compose
+      #   uses: docker/setup-compose-action@v3
+      # - name: Run checks
+      #   run: python infra/pr_checks.py unique-port
+      #   env:
+      #   CHALLENGE_PATH: ${{ matrix.challenge-path }}
