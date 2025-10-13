@@ -32,6 +32,7 @@ jobs:
 
   run-checks:
     runs-on: ubuntu-latest
+    name: Run the checks
     needs: get-challenges
     strategy:
       matrix:
