@@ -21,8 +21,8 @@ jobs:
       - name: Get changed files
         id: changed
         uses: tj-actions/changed-files@v47
-     #   with:
-      #    files: challenges/**
+        with:
+          files: challenges/**
 
       - name: Log all changed files
         run: |
@@ -32,29 +32,20 @@ jobs:
 
       - name: Collect challenge paths as JSON
         id: collect
-        run: |
-          python <<'PYCODE'
+        shell: python 
+        run: |  
           import json
           import os
           import sys
-
-          # Get the space or newline-separated changed files
-          changed = os.getenv("ALL_CHANGED_FILES", "").strip().split()
           #TODO: trim out the "challenges/" here?
-          # Filter out empty and non-challenge paths if needed - TODO: we don't need this
           changed = [c for c in changed if c.startswith("challenges/")]
-
-          # Deduplicate and sort (optional)
+          # Filter out empty and non-challenge paths if needed - TODO: we don't need this
+          changed = os.getenv("ALL_CHANGED_FILES", "").strip().split()
           changed = sorted(set(changed))
-
-          # Convert to JSON array
           json_output = json.dumps(changed)
-
           print(f"json={json_output}")
-          # Write to GITHUB_OUTPUT so next job can consume
           with open(os.environ["GITHUB_OUTPUT"], "a") as f:
               print(f"json={json_output}", file=f)
-          PYCODE
         env:
           ALL_CHANGED_FILES: ${{ steps.changed.outputs.all_changed_files }}
 
