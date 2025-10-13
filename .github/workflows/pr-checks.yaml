@@ -58,6 +58,8 @@ jobs:
     strategy:
       matrix:
         challenge-path: ${{ fromJSON(needs.get-challenges.outputs.challenge-paths) }}
+    env:
+      CHALLENGE_PATH: ${{ matrix.challenge-path }}
     steps:
       - name: Print path
         run: echo "${{ matrix.challenge-path }}"
@@ -69,8 +71,6 @@ jobs:
         uses: mxschmitt/action-tmate@v3
       - name: Compose file is right name
         shell: python
-        env:
-          CHALLENGE_PATH: ${{ matrix.challenge-path }}
         run: |
           import os 
           from pathlib import Path
