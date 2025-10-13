@@ -60,7 +60,7 @@ jobs:
 
           # Loop over challenge list
           for challenge in $(jq -r '.[]' <<<"$CHALLENGES"); do
-            echo "Challenge $challenge"
+          echo "Challenge $challenge" #TODO: better output? 
 
             # If compose.yaml exists, run compose; otherwise print skip
             gcloud compute ssh cyber_f25_0000@challenges --zone=us-east1-b \
@@ -68,7 +68,9 @@ jobs:
               &> challenge.log
 
             rc=$?  # exit code from the SSH command
+            echo "Challenge $challenge $rc"
             results=$(jq --arg c "$challenge" --argjson rc "$rc" '. + {($c): $rc}' <<<"$results")
+            echo $results
           done
 
           # Expose a matrix with [{challenge, code}, ...]
