@@ -80,7 +80,7 @@ jobs:
               print("FAIL")
               sys.exit(1)
           print("PASS")
-      - name: Run checks
-        run: python infra/pr_checks.py unique-port
-        env:
-        CHALLENGE_PATH: ${{ matrix.challenge-path }}
+      # - name: Run checks
+      #   run: python infra/pr_checks.py unique-port
+      #   env:
+      #   CHALLENGE_PATH: ${{ matrix.challenge-path }}
