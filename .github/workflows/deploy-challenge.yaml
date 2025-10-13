@@ -36,15 +36,34 @@ jobs:
           version: ">= 363.0.0"
           project_id: ${{ vars.GCP_PROJECT_ID }}
       - name: Copy latest files onto VM
+        id: collect
         run: |
+          # TODO: have to manually install docker on the VM rn - add as a step 
           gcloud compute ssh cyber_f25_0000@challenges --zone=us-east1-b --command="[ -d /home/cyber_f25_0000/challenges ] && rm -rf /home/cyber_f25_0000/challenges"
           # [ -d <path> ] is used to check if the directory exists, and remove if so
           gcloud compute scp --zone=us-east1-b --recurse challenges cyber_f25_0000@challenges:/home/cyber_f25_0000
-          for challenge in $(jq -r '.[]' <<<"$CHALLENGES"); do
-            echo "Challenge $challenge"
-          done
 
-          # for each challenge in challenges
-          # run gcloud command docker build (if path exists)
-          # update archive file for it (need to parse the path? or can create in "challenge" path?) 
-          # then update with error code matrix for next command
+          results='{}'
+
+          for challenge in $(jq -r '.[]' <<<"$CHALLENGES"); do # loop through the challenges array 
+            echo "Challenge $challenge"
+            
+            # TODO: verify that this will exit as 0 if the compose.yaml simply does not exist 
+            gcloud compute ssh cyber_f25_0000@challenges --zone=us-east1-b --command="[ -f /home/cyber_f25_0000/challenges/$challenge/compose.yaml ] && sudo docker compose -f /home/cyber_f25_0000/challenges/$challenge/compose.yaml up -d --build || echo 'No compose.yaml found, skipping.'" &> challenge.log
+            
+          # TODO: update archive file for it (need to parse the path? or can create in "challenge" path?) 
+            rc=$? # get exit code 
+            results=$(jq --arg c "$challenge" --argjson rc "$rc" '. + {($c):$rc}' <<<"$results")
+          done 
+          echo "matrix=$(jq -c 'to_entries | map({challenge:.key, code:.value})' <<<"$results")" >> "$GITHUB_OUTPUT"
+      - name: Run per-challenge post-step
+        needs: [collect]
+        runs-on: ubuntu-latest
+        strategy:
+          matrix:
+            include: ${{ fromJson(needs.collect.outputs.matrix) }}
+        steps:
+          - name: Print info
+            run: |
+              echo "Challenge: ${{ matrix.challenge }}"
+              echo "Exit code: ${{ matrix.code }}"
