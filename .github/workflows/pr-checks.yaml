@@ -21,8 +21,8 @@ jobs:
       - name: Get changed files
         id: changed
         uses: tj-actions/changed-files@v47
-        with:
-          files: challenges/**
+     #   with:
+      #    files: challenges/**
 
       - name: Log all changed files
         run: |
