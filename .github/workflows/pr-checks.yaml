@@ -63,9 +63,24 @@ jobs:
         run: echo "${{ matrix.challenge-path }}"
       - name: Checkout
         uses: actions/checkout@v4
-      # - name: Install Docker Compose
-      #   uses: docker/setup-compose-action@v3
-      # - name: Run checks
-      #   run: python infra/pr_checks.py unique-port
-      #   env:
-      #   CHALLENGE_PATH: ${{ matrix.challenge-path }}
+      - name: Install Docker Compose
+        uses: docker/setup-compose-action@v3
+      - name: good compose name
+        shell: python
+        run: |
+          import os 
+          from pathlib import Path
+          bad_names = [
+                "docker-compose.yaml",
+                "docker-compose.yml",
+               "compose.yml",
+            ]
+          for name in bad_names:
+            if os.path.isfile(os.path.join(full_challenge_dir_path, name)):
+              print("FAIL")
+              sys.exit(1)
+          print("PASS")
+      - name: Run checks
+        run: python infra/pr_checks.py unique-port
+        env:
+        CHALLENGE_PATH: ${{ matrix.challenge-path }}
