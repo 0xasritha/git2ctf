@@ -1,0 +1,108 @@
+# TAKEN-EXTERNAL-PORTS:
+# Check 1: External Port Allocation, check against global env variable? (would have to make sure that this would be updated on commits to main to to keep everything in sync, otherwise fail the challenge early). also check any variation of docker-compose.yaml (ex. compose.yaml), not just docker-compose.yaml
+# CHECK THAT YOUR CHALLENGES YOU ARE DEPLOYING DON'T HAVE REPETING PORTS EITHER
+# Check 2: If they have a `/static/` folder, check that the `/static/` folder has a zipped file, and that it is zipped in a standadized way
+# Check 3: Check that the docker compose has the auto restart thing
+# Check 4: Check that a uuid.yaml is present with a uuid. Test that unless it is adding the uuid.yaml for the first time people are not modifying the value in uuid.yaml
+
+name: PR Checks Draft
+
+on:
+  pull_request:
+    branches: [dev]
+
+jobs:
+  discover-challenges:
+    runs-on: ubuntu-latest
+    outputs:
+      challenges: ${{ steps.build.outputs.challenges }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: Find changed challenge directories
+        id: changed
+        uses: tj-actions/changed-files@v47
+        with:
+          dir_names: true
+          files: |
+            challenges/**
+
+      - name: Build matrix from changed dirs
+        id: build
+        uses: actions/github-script@v7
+        env:
+          CHANGED: ${{ steps.changed.outputs.all_changed_files }}
+        with:
+          script: |
+            // 'CHANGED' is a newline-separated list of directory paths.
+            const lines = (process.env.CHANGED || "").split(/\r?\n/).filter(Boolean);
+            // Extract top-level challenge folder names: challenges/<name>/...
+            const names = Array.from(new Set(
+              lines
+                .filter(p => p.startsWith("challenges/"))
+                .map(p => p.replace(/^challenges\//, "").split("/")[0])
+                .filter(Boolean)
+            ));
+            core.info(`Changed challenges: ${names.join(", ") || "(none)"}`);
+            core.setOutput("challenges", JSON.stringify(names));
+
+  check-external-port:
+    needs: discover-challenges
+    if: ${{ fromJSON(needs.discover-challenges.outputs.challenges)[0] != null }} # skip if none
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        challenge: ${{ fromJSON(needs.discover-challenges.outputs.challenges) }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Get external ports for challenge
+        id: ports
+        shell: bash
+        run: |
+          set -euo pipefail
+          CHALL_DIR="challenges/${{ matrix.challenge }}"
+          # Collect any supported compose filenames
+          files=()
+          for f in docker-compose.yml docker-compose.yaml compose.yml compose.yaml; do
+            [[ -f "$CHALL_DIR/$f" ]] && files+=("-f" "$CHALL_DIR/$f")
+          done
+
+          ports=""
+          if ((${#files[@]})); then
+            # Extract .published ports (object-syntax only) and unique them
+            ports="$(docker compose "${files[@]}" config --format json 2>/dev/null \
+              | jq -r '.services[].ports[]? | objects | .published | select(. != null and . != "")' \
+              | sort -u)"
+          fi
+
+          {
+            echo "challenge=${{ matrix.challenge }}"
+            echo "ports<<EOF"
+            echo "${ports}"
+            echo "EOF"
+          } >> "$GITHUB_OUTPUT"
+
+      - name: Check for collisions (print with challenge)
+        uses: actions/github-script@v7
+        env:
+          CHALLENGE: ${{ steps.ports.outputs.challenge }}
+          PORTS: ${{ steps.ports.outputs.ports }} # newline-separated
+          ALL_EXTERNAL_PORTS: ${{ vars.ALL_EXTERNAL_PORTS }} # e.g., "80,443 8080\n9090"
+        with:
+          script: |
+            const challenge = process.env.CHALLENGE;
+            const ports = (process.env.PORTS || "").split(/\s+/).filter(Boolean);
+            const allowed = (process.env.ALL_EXTERNAL_PORTS || "").split(/[\s,]+/).filter(Boolean);
+
+            if (ports.length === 0) {
+              core.info(`[${challenge}] No compose ports found. Skipping.`);
+              return;
+            }
+
+            const collisions = ports.filter(p => allowed.includes(p));
+            if (collisions.length) {
+              core.setFailed(`[${challenge}] Collision(s) found on external port(s): ${collisions.join(", ")}`);
+            } else {
+              core.info(`[${challenge}] No collisions.`);
+            }

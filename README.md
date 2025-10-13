@@ -56,13 +56,15 @@ connection-info: "{{ HOST }}:{{ PORT }}"
 
 MVP Goal:
 
-- get the new `info.yaml` working (what I have defined now) for both creating challenges + updating them
+- get the new `info.yaml` working (what I have defined now) for both creating challenges + updating them, dynamically update connection info
   - static file assets
 - get the pipeline working for deploying challenges onto VMs
+  - doesn't have to provide live log streaming
 - docs ?
 - port over the current repo for mintueman to the new format
 - PR checks
   - at the very least, do the port shit
+  - the most basic checks
 - update the CTFd visually so it makes stuff readonly
 
 # Old Brainstorm
