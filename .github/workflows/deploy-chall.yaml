@@ -12,6 +12,7 @@ on:
 # workflows defined in .github/workflows
 
 jobs:
+  # TODO: split up the job so copying work is done on a nother step ?
   GET-ALL-CHALLENGES:
     runs-on: ubuntu-latest
     outputs:
@@ -36,6 +37,7 @@ jobs:
           version: ">= 363.0.0"
           project_id: ${{ vars.GCP_PROJECT_ID }}
       - name: Copy latest files onto VM(s)
+        # this logic makes it so that you don't need to create the `challenges` directory on the VM, however you WILL have to install Docker
         run: |
           gcloud compute ssh cyber_f25_0000@challenges --zone=us-east1-b --command="[ -d /home/cyber_f25_0000/challenges ] && rm -rf /home/cyber_f25_0000/challenges"
           # [ -d <path> ] is used to check if the directory exists, and remove if so 
@@ -45,6 +47,7 @@ jobs:
   # TODO: add a job here that stops execution if no files where changed
   # TODO: should I make some executions only trigger for challenges with /static/ or have docker-compose
 
+  # dynamic challenges: crypto/xor, misc/pyjail, pwn/shellcode, web/xss
   per-challenge-deploy-on-gcp:
     name: ${{ matrix.challenge }}
     needs: GET-ALL-CHALLENGES
@@ -64,6 +67,10 @@ jobs:
         with:
           version: ">= 363.0.0"
           project_id: ${{ vars.GCP_PROJECT_ID }}
+      - name: "Run each dynamic challenge"
+        run: |
+          gcloud compute ssh cyber_f25_0000@challenges --zone=us-east1-b --command="sudo docker compose up -f /home/cyber_f25_0000/challenges/${{ matrix.challenge }} -d --build"
+
   #       - name: Upload Static Files (If Present)
   #         if: ${{ hashFiles(format('challenges/{0}/static/**', matrix.challenge)) != '' }}
   #         uses: google-github-actions/upload-cloud-storage@v2
