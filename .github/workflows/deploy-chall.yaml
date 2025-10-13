@@ -36,13 +36,13 @@ jobs:
         with:
           version: ">= 363.0.0"
           project_id: ${{ vars.GCP_PROJECT_ID }}
-      - name: Copy latest files onto VM(s)
-        # this logic makes it so that you don't need to create the `challenges` directory on the VM, however you WILL have to install Docker
-        run: |
-          gcloud compute ssh cyber_f25_0000@challenges --zone=us-east1-b --command="[ -d /home/cyber_f25_0000/challenges ] && rm -rf /home/cyber_f25_0000/challenges"
-          # [ -d <path> ] is used to check if the directory exists, and remove if so 
-          gcloud compute scp --zone=us-east1-b --recurse challenges cyber_f25_0000@challenges:/home/cyber_f25_0000
-        # then in the next command just make it do "docker compose up -d --build"
+      # - name: Copy latest files onto VM(s)
+      #   # this logic makes it so that you don't need to create the `challenges` directory on the VM, however you WILL have to install Docker
+      #   run: |
+      #     gcloud compute ssh cyber_f25_0000@challenges --zone=us-east1-b --command="[ -d /home/cyber_f25_0000/challenges ] && rm -rf /home/cyber_f25_0000/challenges"
+      #     # [ -d <path> ] is used to check if the directory exists, and remove if so
+      #     gcloud compute scp --zone=us-east1-b --recurse challenges cyber_f25_0000@challenges:/home/cyber_f25_0000
+      #   # then in the next command just make it do "docker compose up -d --build"
 
   # TODO: add a job here that stops execution if no files where changed
   # TODO: should I make some executions only trigger for challenges with /static/ or have docker-compose
@@ -69,7 +69,8 @@ jobs:
           project_id: ${{ vars.GCP_PROJECT_ID }}
       - name: "Run each dynamic challenge"
         run: |
-          gcloud compute ssh cyber_f25_0000@challenges --zone=us-east1-b --command="sudo docker compose -f /home/cyber_f25_0000/challenges/${{ matrix.challenge }} up -d --build"
+          # gcloud compute ssh cyber_f25_0000@challenges --zone=us-east1-b --command="sudo docker compose -f /home/cyber_f25_0000/challenges/${{ matrix.challenge }} up -d --build"
+           gcloud compute ssh cyber_f25_0000@challenges --zone=us-east1-b --command="ls"
 
   #       - name: Upload Static Files (If Present)
   #         if: ${{ hashFiles(format('challenges/{0}/static/**', matrix.challenge)) != '' }}
