@@ -2,7 +2,7 @@ name: PR Checks
 
 on:
   pull_request:
-    branches: ["**"] # or restrict to [dev] if that's truly what you want
+    branches: ["dev"] # or restrict to [dev] if that's truly what you want
 
 jobs:
   get-challenges:
